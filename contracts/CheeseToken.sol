@@ -2,16 +2,13 @@
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "./GameMinion.sol";
 
-error CheeseToken__forbidden();
-
-contract CheeseToken is ERC20 {
-    address private immutable i_gameAddress;
-
+contract CheeseToken is ERC20, GameMinion {
     constructor(address gameAddress, uint256 supply)
         ERC20("CheeseToken", "CT")
+        GameMinion(gameAddress)
     {
-        i_gameAddress = gameAddress;
         _mint(gameAddress, supply);
     }
 
@@ -57,9 +54,4 @@ contract CheeseToken is ERC20 {
         onlyGame
         returns (bool)
     {}
-
-    modifier onlyGame() {
-        if (_msgSender() != i_gameAddress) revert CheeseToken__forbidden();
-        _;
-    }
 }

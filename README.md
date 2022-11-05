@@ -1,13 +1,17 @@
-# Sample Hardhat Project
+# The Mouse Game 🐭
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a script that deploys that contract.
+Work in progress 👷‍♂️.
 
-Try running some of the following tasks:
+The game was inspired by [this article](https://beincrypto.com/learn/web3-project-ideas/).
 
-```shell
-npx hardhat help
-npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat run scripts/deploy.ts
-```
+**Game rules:**
+
+- The game lasts 2 hrs.
+- Every player pays an amount to enter the game and receives 240 cheese tokens 🧀.
+- Since the first player enters the game there is a 10 minute deadline to enter.
+- The maximum number of players are 10 and the minimum are 3.
+- One random player receives the mouse NFT 🐁.
+- Only one mouse NFT per match.
+- Every 30 seconds that the player holds the mouse loses 1 cheese token.
+- When the game ends the user with more cheese tokens wins the tokens stolen by the mouse.
+- Once the match finishes the mouse toke is burned, the players cheese tokens are swapped for prize tokens 🤑 that can be changed for ETH

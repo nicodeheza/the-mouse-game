@@ -4,18 +4,24 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "./GameMinion.sol";
 
+error CheeseToken__forbidden();
+
 contract CheeseToken is ERC20, GameMinion {
-    constructor(address gameAddress, uint256 supply)
-        ERC20("CheeseToken", "CT")
-        GameMinion(gameAddress)
-    {
+    address private immutable i_mouseAddress;
+
+    constructor(
+        address gameAddress,
+        address mouseAddress,
+        uint256 supply
+    ) ERC20("CheeseToken", "CT") GameMinion(gameAddress) {
+        i_mouseAddress = mouseAddress;
         _mint(gameAddress, supply);
     }
 
     function transfer(address to, uint256 amount)
         public
         override
-        onlyGame
+        onlyGameAndMouse
         returns (bool)
     {
         _transfer(i_gameAddress, to, amount);
@@ -34,7 +40,7 @@ contract CheeseToken is ERC20, GameMinion {
         address from,
         address to,
         uint256 amount
-    ) public override onlyGame returns (bool) {
+    ) public override onlyGameAndMouse returns (bool) {
         _spendAllowance(from, i_gameAddress, amount);
         _approve(to, i_gameAddress, allowance(to, i_gameAddress) + amount);
         _transfer(from, to, amount);
@@ -44,7 +50,7 @@ contract CheeseToken is ERC20, GameMinion {
     function decreaseAllowance(address spender, uint256 subtractedValue)
         public
         override
-        onlyGame
+        onlyGameAndMouse
         returns (bool)
     {}
 
@@ -54,4 +60,10 @@ contract CheeseToken is ERC20, GameMinion {
         onlyGame
         returns (bool)
     {}
+
+    modifier onlyGameAndMouse() {
+        if (msg.sender != i_gameAddress && msg.sender != i_mouseAddress)
+            revert CheeseToken__forbidden();
+        _;
+    }
 }

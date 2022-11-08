@@ -11,7 +11,7 @@ error MouseNFT__OnlyOneMouse();
 
 contract MouseNFT is ERC721, GameMinion {
     uint256 s_tokenCount = 0;
-    uint256 s_liveTokens = 0;
+    bool s_isLive = false;
     uint256 s_lastTranfer;
     CheeseToken cheeseToken;
 
@@ -45,15 +45,15 @@ contract MouseNFT is ERC721, GameMinion {
     }
 
     function mint(address to) external onlyGame {
-        if (s_liveTokens > 0) revert MouseNFT__OnlyOneMouse();
+        if (s_isLive) revert MouseNFT__OnlyOneMouse();
         _mint(to, s_tokenCount);
-        s_liveTokens++;
+        s_isLive = true;
         s_tokenCount++;
     }
 
     function burn() external onlyGame {
         _burn(s_tokenCount);
-        s_liveTokens = 0;
+        s_isLive = false;
     }
 
     function _beforeTokenTransfer(

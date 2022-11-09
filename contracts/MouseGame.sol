@@ -77,9 +77,7 @@ contract MouseGame {
                     address(this),
                     CHEESE_INITIAL_AMOUNT
                 );
-                (bool sent, ) = payable(player).call{
-                    value: CHEESE_INITIAL_AMOUNT * ENTRANCE_FEE
-                }("");
+                (bool sent, ) = payable(player).call{value: ENTRANCE_FEE}("");
                 if (!sent) revert MouseGame__tryAgainLater();
                 s_players[i] = address(0);
             }

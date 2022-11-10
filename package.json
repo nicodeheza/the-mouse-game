@@ -4,6 +4,7 @@
   "author": "nicodeheza",
   "license": "MIT",
   "dependencies": {
+    "@chainlink/contracts": "^0.5.1",
     "@openzeppelin/contracts": "^4.7.3",
     "hardhat": "^2.12.2"
   },

@@ -52,6 +52,10 @@ contract MouseGame {
         if (msg.value > ENTRANCE_FEE) revert MouseGame__overpaid();
         if (isRegistered(msg.sender)) revert MouseGame__alreadyRegistered();
 
+        if (s_inscriptionStartTime == 0) {
+            s_inscriptionStartTime = block.timestamp;
+        }
+
         s_players.push(msg.sender);
         cheeseToken.transfer(msg.sender, CHEESE_INITIAL_AMOUNT);
     }
@@ -63,7 +67,8 @@ contract MouseGame {
         if (s_players.length < MIN_PLAYERS) {
             revertGame();
         } else {
-            //...
+            s_gameStartTime = block.timestamp;
+            s_gameSatate = GameState.playing;
         }
     }
 

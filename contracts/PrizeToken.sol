@@ -12,8 +12,8 @@ contract PrizeToken is ERC20, GameMinion {
         GameMinion(gameAddress)
     {}
 
-    function mint(uint256 amount) public onlyGame {
-        _mint(i_gameAddress, amount);
+    function mint(address to, uint256 amount) public onlyGame {
+        _mint(to, amount);
     }
 
     function burn(address account, uint256 amount) public onlyGame {

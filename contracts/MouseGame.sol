@@ -56,7 +56,13 @@ contract MouseGame is RandomNumber {
         mouseNft = MouseNFT(mouseNftAddress);
     }
 
-    //add event
+    event playerInscribed(uint256 indexed time, address player);
+    event gameStarted(uint256 indexed time, address firstMouseOwner);
+    event gameReverted();
+    event gameEnded(address indexed player, uint256 playerPrize);
+    event gameWinner(address winner);
+    event prizeSwaped(address indexed player, uint256 prize, uint256 eth);
+
     function inscribe() public payable {
         if (
             s_gameSatate == GameState.close ||
@@ -76,9 +82,10 @@ contract MouseGame is RandomNumber {
 
         s_players.push(msg.sender);
         cheeseToken.transfer(msg.sender, CHEESE_INITIAL_AMOUNT);
+
+        emit playerInscribed(block.timestamp, msg.sender);
     }
 
-    //add event
     function startGame() public {
         if (s_gameSatate != GameState.close)
             revert MouseGame__notReadyToStart();
@@ -98,9 +105,10 @@ contract MouseGame is RandomNumber {
         mouseNft.mint(mouseOwner);
         s_gameStartTime = block.timestamp;
         s_gameSatate = GameState.playing;
+
+        emit gameStarted(block.timestamp, mouseOwner);
     }
 
-    //add event
     function revertGame() internal {
         for (uint i = 0; i < s_players.length; i++) {
             address player = s_players[i];
@@ -115,9 +123,10 @@ contract MouseGame is RandomNumber {
                 s_players[i] = address(0);
             }
         }
+
+        emit gameReverted();
     }
 
-    //add event
     function endGame() public {
         if (getGameTimeLeft() > 0 || s_gameSatate != GameState.playing) {
             revert MouseGame__gameInProgress();
@@ -137,6 +146,8 @@ contract MouseGame is RandomNumber {
                 playerCheeseBalance
             );
             prizeToken.mint(player, playerCheeseBalance);
+
+            emit gameEnded(player, playerCheeseBalance);
         }
 
         uint256 mouseCheeseBalance = cheeseToken.balanceOf(address(mouseNft));
@@ -152,8 +163,11 @@ contract MouseGame is RandomNumber {
         s_gameStartTime = 0;
         s_inscriptionStartTime = 0;
         delete s_players;
+
+        emit gameWinner(winner.player);
     }
 
+    // add event
     function prizeToEth(uint256 amount) public payable {
         uint256 userBalance = prizeToken.balanceOf(msg.sender);
         if (amount > userBalance) revert MouseGame__underfunded();
@@ -163,6 +177,8 @@ contract MouseGame is RandomNumber {
         (bool sent, ) = msg.sender.call{value: ethToSend}("");
 
         if (!sent) revert MouseGame__trasactionFail();
+
+        emit prizeSwaped(msg.sender, amount, ethToSend);
     }
 
     function isRegistered(address player) internal view returns (bool) {

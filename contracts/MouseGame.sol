@@ -87,11 +87,12 @@ contract MouseGame is RandomNumber {
     }
 
     function startGame() public {
-        if (s_gameSatate != GameState.close)
+        if (s_gameSatate != GameState.close || getInscriptionTimeLeft() > 0)
             revert MouseGame__notReadyToStart();
         if (s_players.length < MIN_PLAYERS) {
             revertGame();
         } else {
+            if (s_gameSatate != GameState.close) s_gameSatate = GameState.close;
             requestRandomWords();
         }
     }

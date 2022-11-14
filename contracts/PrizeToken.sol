@@ -4,8 +4,6 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "./GameMinion.sol";
 
-error PrizeToken__forbidden();
-
 contract PrizeToken is ERC20, GameMinion {
     constructor(address gameAddress)
         ERC20("MouseGamePrice", "MGP")

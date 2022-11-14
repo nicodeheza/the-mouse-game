@@ -5,6 +5,7 @@ import "./CheeseToken.sol";
 import "./PrizeToken.sol";
 import "./RandomNumber.sol";
 import "./MouseNFT.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 error MouseGame__inscriptionClose();
 error MouseGame__underpayment();
@@ -17,7 +18,7 @@ error MouseGame__gameInProgress();
 error MouseGame__underfunded();
 error MouseGame__OnlyReferee();
 
-contract MouseGame is RandomNumber {
+contract MouseGame is RandomNumber, Ownable {
     struct Winner {
         uint256 balance;
         address player;
@@ -43,17 +44,11 @@ contract MouseGame is RandomNumber {
     MouseNFT mouseNft;
 
     constructor(
-        address cheeseTokenAddress,
-        address prizeTokenAddress,
         address linkAddressm,
         address wrapperAddress,
         address uniswapRouterAddress,
-        address mouseNftAddress,
         address referee
     ) RandomNumber(linkAddressm, wrapperAddress, uniswapRouterAddress) {
-        cheeseToken = CheeseToken(cheeseTokenAddress);
-        prizeToken = PrizeToken(prizeTokenAddress);
-        mouseNft = MouseNFT(mouseNftAddress);
         i_referee = referee;
     }
 
@@ -259,6 +254,16 @@ contract MouseGame is RandomNumber {
         int delayTime = int(endTime) - int(startTime) - int(duration);
         if (delayTime < 0) delayTime = delayTime * -1;
         return uint256(delayTime);
+    }
+
+    function setContracts(
+        address mouseNftAddress,
+        address cheeseTokenAddress,
+        address prizeTokenAddress
+    ) external onlyOwner {
+        mouseNft = MouseNFT(mouseNftAddress);
+        cheeseToken = CheeseToken(cheeseTokenAddress);
+        prizeToken = PrizeToken(prizeTokenAddress);
     }
 
     modifier onlyReferee() {

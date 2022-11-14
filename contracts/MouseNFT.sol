@@ -4,23 +4,22 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Base64.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./GameMinion.sol";
 import "./CheeseToken.sol";
 
 error MouseNFT__OnlyOneMouse();
 
-contract MouseNFT is ERC721, GameMinion {
+contract MouseNFT is ERC721, GameMinion, Ownable {
     uint256 s_tokenCount = 0;
     bool s_isLive = false;
     uint256 s_lastTranfer;
     CheeseToken cheeseToken;
 
-    constructor(address gameAddress, address cheeseTokenAddress)
+    constructor(address gameAddress)
         ERC721("Mouse", "M")
         GameMinion(gameAddress)
-    {
-        cheeseToken = CheeseToken(cheeseTokenAddress);
-    }
+    {}
 
     function tokenURI(uint256) public pure override returns (string memory) {
         bytes memory dataURI = abi.encodePacked(
@@ -71,5 +70,9 @@ contract MouseNFT is ERC721, GameMinion {
         } else {
             s_lastTranfer = block.timestamp;
         }
+    }
+
+    function setCheeseToken(address cheeseTokenAddress) external onlyOwner {
+        cheeseToken = CheeseToken(cheeseTokenAddress);
     }
 }

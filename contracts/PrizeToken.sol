@@ -6,7 +6,7 @@ import "./GameMinion.sol";
 
 contract PrizeToken is ERC20, GameMinion {
     constructor(address gameAddress)
-        ERC20("MouseGamePrice", "MGP")
+        ERC20("MouseGamePrize", "MGP")
         GameMinion(gameAddress)
     {}
 

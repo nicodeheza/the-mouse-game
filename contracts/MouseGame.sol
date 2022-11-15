@@ -137,7 +137,7 @@ contract MouseGame is RandomNumber, Ownable {
                 address(this),
                 playerCheeseBalance
             );
-            prizeToken.mint(player, playerCheeseBalance);
+            mintPrize(player, playerCheeseBalance);
 
             emit gameEnded(player, playerCheeseBalance);
         }
@@ -148,7 +148,7 @@ contract MouseGame is RandomNumber, Ownable {
             address(this),
             mouseCheeseBalance
         );
-        prizeToken.mint(winner.player, mouseCheeseBalance);
+        mintPrize(winner.player, mouseCheeseBalance);
         mouseNft.burn();
 
         uint256 startDelay = getDelay(
@@ -187,7 +187,7 @@ contract MouseGame is RandomNumber, Ownable {
     function prizeToEth(uint256 amount) public payable {
         uint256 userBalance = prizeToken.balanceOf(msg.sender);
         if (amount > userBalance) revert MouseGame__underfunded();
-        prizeToken.burn(msg.sender, amount);
+        burnPrize(msg.sender, amount);
         uint256 prizeTokenValue = getPrizeTokenValue();
         uint256 ethToSend = amount * prizeTokenValue;
         s_balance[address(this)] = s_balance[address(this)] - ethToSend;
@@ -222,6 +222,14 @@ contract MouseGame is RandomNumber, Ownable {
         uint256 thisBalance = s_balance[address(this)];
 
         return thisBalance / prizeTokenTotalSupply;
+    }
+
+    function mintPrize(address to, uint256 amount) internal {
+        prizeToken.mint(to, amount);
+    }
+
+    function burnPrize(address owner, uint256 amount) internal {
+        prizeToken.burn(owner, amount);
     }
 
     function getInscriptionTimeLeft() public view returns (uint256) {

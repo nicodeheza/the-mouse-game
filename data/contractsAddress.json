@@ -8,6 +8,18 @@
         ],
         "uniswapRouter2": [
             "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
+        ],
+        "MouseGame": [
+            "0x90c84237fDdf091b1E63f369AF122EB46000bc70"
+        ],
+        "MouseNFT": [
+            "0x3D63c50AD04DD5aE394CAB562b7691DD5de7CF6f"
+        ],
+        "CheeseToken": [
+            "0x103A3b128991781EE2c8db0454cA99d67b257923"
+        ],
+        "PrizeToken": [
+            "0xBbc18b580256A82dC0F9A86152b8B22E7C1C8005"
         ]
     }
 }

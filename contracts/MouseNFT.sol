@@ -66,8 +66,8 @@ contract MouseNFT is ERC721, GameMinion, Ownable {
         address to,
         uint256
     ) internal override {
-        if (!game.isRegistered(to)) {
-            if (to != address(0)) revert MouseNFT__toAddressNotInscripted();
+        if (!game.isRegistered(to) && to != address(0)) {
+            revert MouseNFT__toAddressNotInscripted();
         }
         if (s_lastTranfer > 0) {
             uint256 tokensToSteal = (block.timestamp - s_lastTranfer) / 30;

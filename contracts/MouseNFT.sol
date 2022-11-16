@@ -7,19 +7,24 @@ import "@openzeppelin/contracts/utils/Base64.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./GameMinion.sol";
 import "./CheeseToken.sol";
+import "./MouseGame.sol";
 
 error MouseNFT__OnlyOneMouse();
+error MouseNFT__toAddressNotInscripted();
 
 contract MouseNFT is ERC721, GameMinion, Ownable {
     uint256 s_tokenCount = 0;
     bool s_isLive = false;
     uint256 s_lastTranfer;
     CheeseToken cheeseToken;
+    MouseGame game;
 
     constructor(address gameAddress)
         ERC721("Mouse", "M")
         GameMinion(gameAddress)
-    {}
+    {
+        game = MouseGame(gameAddress);
+    }
 
     function tokenURI(uint256) public pure override returns (string memory) {
         bytes memory dataURI = abi.encodePacked(
@@ -55,11 +60,15 @@ contract MouseNFT is ERC721, GameMinion, Ownable {
         s_isLive = false;
     }
 
+    // add only trasfer to players
     function _beforeTokenTransfer(
         address,
         address to,
         uint256
     ) internal override {
+        if (!game.isRegistered(to)) {
+            if (to != address(0)) revert MouseNFT__toAddressNotInscripted();
+        }
         if (s_lastTranfer > 0) {
             uint256 tokensToSteal = (block.timestamp - s_lastTranfer) / 30;
             address owner = ownerOf(s_tokenCount);

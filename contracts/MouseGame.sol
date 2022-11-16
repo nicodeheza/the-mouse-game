@@ -210,7 +210,7 @@ contract MouseGame is RandomNumber, Ownable {
         emit refereeWithdrawEvent(amount);
     }
 
-    function isRegistered(address player) internal view returns (bool) {
+    function isRegistered(address player) public view returns (bool) {
         for (uint i = 0; i < s_players.length; i++) {
             if (s_players[i] == player) return true;
         }

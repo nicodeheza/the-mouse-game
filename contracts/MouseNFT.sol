@@ -60,7 +60,6 @@ contract MouseNFT is ERC721, GameMinion, Ownable {
         s_isLive = false;
     }
 
-    // add only trasfer to players
     function _beforeTokenTransfer(
         address,
         address to,

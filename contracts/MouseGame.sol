@@ -34,7 +34,7 @@ contract MouseGame is RandomNumber, Ownable {
 
     address public immutable i_referee;
 
-    address[] private s_players;
+    address[] internal s_players;
     uint256 private s_inscriptionStartTime;
     uint256 private s_gameStartTime;
     mapping(address => uint) private s_balance;

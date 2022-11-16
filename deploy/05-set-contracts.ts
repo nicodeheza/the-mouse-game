@@ -1,3 +1,4 @@
+import "dotenv/config";
 import {HardhatRuntimeEnvironment} from "hardhat/types";
 import {DeployFunction} from "hardhat-deploy/types";
 import {getContractAddress} from "../scripts/contractsAddress";
@@ -12,6 +13,15 @@ const setContracts: DeployFunction = async function (hre: HardhatRuntimeEnvironm
 	const contractsAddress = getContractAddress()[networkName];
 
 	try {
+		if (process.env.NODE_ENV == "test") {
+			const gameMock = await ethers.getContract("MouseGameMock", deployer);
+			await gameMock.setContracts(
+				contractsAddress.MouseNFT[0],
+				contractsAddress.CheeseToken[0],
+				contractsAddress.PrizeToken[0]
+			);
+		}
+
 		const game = await ethers.getContract("MouseGame", deployer);
 		const gameTx = await game.setContracts(
 			contractsAddress.MouseNFT[0],

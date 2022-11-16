@@ -34,9 +34,10 @@ contract MouseNFT is ERC721, GameMinion, Ownable {
             '"image": "https://upload.wikimedia.org/wikipedia/commons/6/63/Twemoji12_1f42d.svg",',
             '"name": "Bad Mouse",',
             '"attributes": [ ',
-            '{"trait_type": "personality","value": "thief"}',
-            '{"trait_type": "goodness","value": "0"}',
-            '{"trait_type": "cheese_theft_speed_per_sec","value": "30"}]'
+            '{"trait_type": "personality","value": "thief"},',
+            '{"trait_type": "goodness","value": "0"},',
+            '{"trait_type": "cheese_theft_speed_per_sec","value": "30"}]',
+            "}"
         );
 
         return

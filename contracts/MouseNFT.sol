@@ -13,9 +13,9 @@ error MouseNFT__OnlyOneMouse();
 error MouseNFT__toAddressNotInscripted();
 
 contract MouseNFT is ERC721, GameMinion, Ownable {
-    uint256 s_tokenCount = 0;
-    bool s_isLive = false;
-    uint256 s_lastTranfer;
+    uint256 private s_tokenCount = 0;
+    bool private s_isLive = false;
+    uint256 private s_lastTranfer;
     CheeseToken cheeseToken;
     MouseGame game;
 
@@ -83,5 +83,17 @@ contract MouseNFT is ERC721, GameMinion, Ownable {
 
     function setCheeseToken(address cheeseTokenAddress) external onlyOwner {
         cheeseToken = CheeseToken(cheeseTokenAddress);
+    }
+
+    function getTokenCount() public view returns (uint256) {
+        return s_tokenCount;
+    }
+
+    function getIsLive() public view returns (bool) {
+        return s_isLive;
+    }
+
+    function getLastTransfer() public view returns (uint256) {
+        return s_lastTranfer;
     }
 }

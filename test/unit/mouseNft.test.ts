@@ -61,4 +61,47 @@ import {MouseNFT, MouseGameMock} from "../../typechain-types";
 					]);
 				});
 			});
+			describe("mint", function () {
+				it("only game can call it", async function () {
+					await expect(mouseNft.mint(deployer.address)).to.have.been.rejectedWith(
+						"GameMinion__forbidden()"
+					);
+				});
+				it("only can be one mouse at the time", async function () {
+					await mouseGameMock.mintMouse(deployer.address);
+					await expect(
+						mouseGameMock.mintMouse(deployer.address)
+					).to.have.been.rejectedWith("MouseNFT__OnlyOneMouse()");
+				});
+				it("to address must be the owner", async function () {
+					await mouseGameMock.mintMouse(deployer.address);
+					const mouseOwner = await mouseNft.ownerOf(0);
+					expect(mouseOwner).to.be.equal(deployer.address);
+				});
+				it("states must be updated", async function () {
+					const initialIsLive = await mouseNft.getIsLive();
+					const initialTokenCount = await mouseNft.getTokenCount();
+					const initialLastTransfer = await mouseNft.getLastTransfer();
+
+					expect(initialIsLive).to.be.equal(false);
+					expect(initialTokenCount).to.be.equal(0);
+					expect(initialLastTransfer).to.be.equal(0);
+
+					await mouseGameMock.mintMouse(deployer.address);
+
+					const finalIsLive = await mouseNft.getIsLive();
+					const finalTokenCount = await mouseNft.getTokenCount();
+					const finalLastTransfer = await mouseNft.getLastTransfer();
+
+					const blocknumber = await ethers.provider.getBlockNumber();
+					const block = await ethers.provider.getBlock(blocknumber);
+					const timestamp = block.timestamp;
+
+					await network.provider.send("evm_mine");
+
+					expect(finalIsLive).to.be.equal(true);
+					expect(finalTokenCount).to.be.equal(1);
+					expect(finalLastTransfer).to.be.equal(timestamp);
+				});
+			});
 	  });

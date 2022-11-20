@@ -17,4 +17,8 @@ contract MouseGameMock is MouseGame {
     function mintMouse(address to) public {
         mouseNft.mint(to);
     }
+
+    function burnMouse() public {
+        mouseNft.burn();
+    }
 }

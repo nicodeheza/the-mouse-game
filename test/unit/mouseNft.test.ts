@@ -75,7 +75,7 @@ import {MouseNFT, MouseGameMock} from "../../typechain-types";
 				});
 				it("to address must be the owner", async function () {
 					await mouseGameMock.mintMouse(deployer.address);
-					const mouseOwner = await mouseNft.ownerOf(0);
+					const mouseOwner = await mouseNft.ownerOf(1);
 					expect(mouseOwner).to.be.equal(deployer.address);
 				});
 				it("states must be updated", async function () {
@@ -102,6 +102,26 @@ import {MouseNFT, MouseGameMock} from "../../typechain-types";
 					expect(finalIsLive).to.be.equal(true);
 					expect(finalTokenCount).to.be.equal(1);
 					expect(finalLastTransfer).to.be.equal(timestamp);
+				});
+			});
+			describe("burn", function () {
+				beforeEach(async function () {
+					await mouseGameMock.mintMouse(deployer.address);
+				});
+				it("only game can call it", async function () {
+					await expect(mouseNft.burn()).to.be.rejectedWith("GameMinion__forbidden()");
+				});
+				it("token must be burned successfully", async function () {
+					await mouseGameMock.burnMouse();
+					await expect(mouseNft.ownerOf(1)).to.be.rejectedWith(
+						"ERC721: invalid token ID"
+					);
+				});
+				it("is life must be false", async function () {
+					await mouseGameMock.burnMouse();
+					const isLive = await mouseNft.getIsLive();
+
+					expect(isLive).to.be.equal(false);
 				});
 			});
 	  });

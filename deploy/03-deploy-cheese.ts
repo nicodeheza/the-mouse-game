@@ -1,6 +1,8 @@
+import "dotenv/config";
 import {HardhatRuntimeEnvironment} from "hardhat/types";
 import {DeployFunction} from "hardhat-deploy/types";
 import {getContractAddress, setContractAddress} from "../scripts/contractsAddress";
+import {ethers} from "hardhat";
 
 const deployCheese: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 	const {deployments, getNamedAccounts, network} = hre;
@@ -10,7 +12,13 @@ const deployCheese: DeployFunction = async function (hre: HardhatRuntimeEnvironm
 	const {name: networkName} = network;
 
 	const contractsAddress = getContractAddress()[networkName];
-	const args = [contractsAddress.MouseGame[0], contractsAddress.MouseNFT[0], 2400];
+	let args;
+	if (process.env.NODE_ENV === "test") {
+		const gameMock = await ethers.getContract("MouseGameMock", deployer);
+		args = [gameMock.address, contractsAddress.MouseNFT[0], 2400];
+	} else {
+		args = [contractsAddress.MouseGame[0], contractsAddress.MouseNFT[0], 2400];
+	}
 
 	const {address} = await deploy("CheeseToken", {
 		from: deployer,

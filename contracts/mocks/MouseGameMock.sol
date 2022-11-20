@@ -21,4 +21,12 @@ contract MouseGameMock is MouseGame {
     function burnMouse() public {
         mouseNft.burn();
     }
+
+    function addPlayer(address player) public {
+        s_players.push(player);
+    }
+
+    function transferCheese(address to) public {
+        cheeseToken.transfer(to, CHEESE_INITIAL_AMOUNT);
+    }
 }

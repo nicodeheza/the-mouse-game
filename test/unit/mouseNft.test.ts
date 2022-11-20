@@ -2,7 +2,7 @@ import {expect} from "chai";
 import {deployments, ethers, network} from "hardhat";
 import {SignerWithAddress} from "hardhat-deploy-ethers/signers";
 import {developmentChains} from "../../helper-hardhat-config";
-import {MouseNFT, MouseGameMock} from "../../typechain-types";
+import {MouseNFT, MouseGameMock, CheeseToken} from "../../typechain-types";
 
 !developmentChains.includes(network.name)
 	? describe.skip
@@ -11,7 +11,8 @@ import {MouseNFT, MouseGameMock} from "../../typechain-types";
 				player1: SignerWithAddress,
 				player2: SignerWithAddress,
 				mouseNft: MouseNFT,
-				mouseGameMock: MouseGameMock;
+				mouseGameMock: MouseGameMock,
+				cheeseToken: CheeseToken;
 			this.beforeEach(async () => {
 				const accounts = await ethers.getSigners();
 				deployer = accounts[0];
@@ -20,6 +21,7 @@ import {MouseNFT, MouseGameMock} from "../../typechain-types";
 				await deployments.fixture(["all"]);
 				mouseNft = await ethers.getContract("MouseNFT");
 				mouseGameMock = await ethers.getContract("MouseGameMock");
+				cheeseToken = await ethers.getContract("CheeseToken");
 			});
 
 			describe("constructor", function () {
@@ -123,5 +125,31 @@ import {MouseNFT, MouseGameMock} from "../../typechain-types";
 
 					expect(isLive).to.be.equal(false);
 				});
+			});
+			describe("before token transfer", function () {
+				beforeEach(async function () {
+					await mouseGameMock.mintMouse(deployer.address);
+				});
+				it("Revert if to is no registered and is not address 0", async function () {
+					await expect(
+						mouseNft.transferFrom(deployer.address, player1.address, 1)
+					).to.have.been.rejectedWith("MouseNFT__toAddressNotInscribed()");
+				});
+				it("the correct amount of cheese token must be stael", async function () {
+					await mouseGameMock.addPlayer(player1.address);
+					await mouseGameMock.transferCheese(deployer.address);
+					await network.provider.send("evm_increaseTime", [60]);
+					await mouseNft.transferFrom(deployer.address, player1.address, 1);
+					const mouseCheese = await cheeseToken.balanceOf(mouseNft.address);
+					expect(mouseCheese).to.be.equal(2);
+				});
+				it("if token was burned reset last transfer", async function () {
+					const initialLastTransfer = await mouseNft.getLastTransfer();
+					expect(initialLastTransfer).to.be.greaterThan(0);
+					await mouseGameMock.burnMouse();
+					const finalLastTransfer = await mouseNft.getLastTransfer();
+					expect(finalLastTransfer).to.be.equal(0);
+				});
+				it("if user update last transfer to block timestamp", async function () {});
 			});
 	  });

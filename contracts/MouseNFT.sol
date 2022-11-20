@@ -10,7 +10,7 @@ import "./CheeseToken.sol";
 import "./MouseGame.sol";
 
 error MouseNFT__OnlyOneMouse();
-error MouseNFT__toAddressNotInscripted();
+error MouseNFT__toAddressNotInscribed();
 
 contract MouseNFT is ERC721, GameMinion, Ownable {
     uint256 private s_tokenCount = 0;
@@ -67,7 +67,7 @@ contract MouseNFT is ERC721, GameMinion, Ownable {
         uint256
     ) internal override {
         if (!game.isRegistered(to) && to != address(0)) {
-            revert MouseNFT__toAddressNotInscripted();
+            revert MouseNFT__toAddressNotInscribed();
         }
         if (s_lastTranfer > 0) {
             uint256 tokensToSteal = (block.timestamp - s_lastTranfer) / 30;

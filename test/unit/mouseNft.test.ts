@@ -150,6 +150,17 @@ import {MouseNFT, MouseGameMock, CheeseToken} from "../../typechain-types";
 					const finalLastTransfer = await mouseNft.getLastTransfer();
 					expect(finalLastTransfer).to.be.equal(0);
 				});
-				it("if user update last transfer to block timestamp", async function () {});
+				it("if user update last transfer to block timestamp", async function () {
+					await mouseGameMock.addPlayer(player1.address);
+					await mouseGameMock.transferCheese(deployer.address);
+					await network.provider.send("evm_increaseTime", [60]);
+					const tx = await mouseNft.transferFrom(deployer.address, player1.address, 1);
+					const receipt = await tx.wait();
+					const txBlockNumber = receipt.blockNumber;
+					const block = await ethers.provider.getBlock(txBlockNumber);
+					const txTimeStamp = block.timestamp;
+					const finalLastTransfer = await mouseNft.getLastTransfer();
+					expect(finalLastTransfer).to.be.equal(txTimeStamp);
+				});
 			});
 	  });

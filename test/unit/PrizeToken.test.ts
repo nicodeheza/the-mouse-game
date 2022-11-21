@@ -2,18 +2,20 @@ import {expect} from "chai";
 import {deployments, ethers, network} from "hardhat";
 import {SignerWithAddress} from "hardhat-deploy-ethers/signers";
 import {developmentChains} from "../../helper-hardhat-config";
-import {MouseGame, PrizeToken} from "../../typechain-types";
+import {MouseGameMock, PrizeToken} from "../../typechain-types";
 
 !developmentChains.includes(network.name)
 	? describe.skip
 	: describe("PrizeToken unit test", function () {
-			let deployer: SignerWithAddress, mouseGame: MouseGame, prizeToken: PrizeToken;
+			let deployer: SignerWithAddress,
+				mouseGameMock: MouseGameMock,
+				prizeToken: PrizeToken;
 			beforeEach(async () => {
 				const accounts = await ethers.getSigners();
 				deployer = accounts[0];
 
 				await deployments.fixture(["all"]);
-				mouseGame = await ethers.getContract("MouseGame");
+				mouseGameMock = await ethers.getContract("MouseGameMock");
 				prizeToken = await ethers.getContract("PrizeToken");
 			});
 
@@ -32,6 +34,11 @@ import {MouseGame, PrizeToken} from "../../typechain-types";
 						"GameMinion__forbidden()"
 					);
 				});
+				it("mint successfully to player", async function () {
+					await mouseGameMock.mintPrizeMock(deployer.address, 10);
+					const deployerBalance = await prizeToken.balanceOf(deployer.address);
+					expect(deployerBalance).to.be.equal(10);
+				});
 			});
 
 			describe("burn", function () {
@@ -39,6 +46,13 @@ import {MouseGame, PrizeToken} from "../../typechain-types";
 					await expect(prizeToken.burn(deployer.address, 10)).to.have.been.rejectedWith(
 						"GameMinion__forbidden()"
 					);
+				});
+				it("burn successfully to player", async function () {
+					await mouseGameMock.mintPrizeMock(deployer.address, 10);
+					await mouseGameMock.burnPrizeMock(deployer.address, 5);
+					const deployerBalance = await prizeToken.balanceOf(deployer.address);
+
+					expect(deployerBalance).to.be.equal(5);
 				});
 			});
 	  });

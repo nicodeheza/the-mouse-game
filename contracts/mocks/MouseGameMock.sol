@@ -29,4 +29,12 @@ contract MouseGameMock is MouseGame {
     function transferCheese(address to) public {
         cheeseToken.transfer(to, CHEESE_INITIAL_AMOUNT);
     }
+
+    function mintPrizeMock(address to, uint256 amount) public {
+        prizeToken.mint(to, amount);
+    }
+
+    function burnPrizeMock(address account, uint256 amount) public {
+        prizeToken.burn(account, amount);
+    }
 }

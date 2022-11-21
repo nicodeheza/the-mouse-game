@@ -9,7 +9,6 @@ import {MouseNFT, MouseGameMock, CheeseToken} from "../../typechain-types";
 	: describe("MouseNFT unit test", function () {
 			let deployer: SignerWithAddress,
 				player1: SignerWithAddress,
-				player2: SignerWithAddress,
 				mouseNft: MouseNFT,
 				mouseGameMock: MouseGameMock,
 				cheeseToken: CheeseToken;
@@ -17,7 +16,6 @@ import {MouseNFT, MouseGameMock, CheeseToken} from "../../typechain-types";
 				const accounts = await ethers.getSigners();
 				deployer = accounts[0];
 				player1 = accounts[1];
-				player2 = accounts[2];
 				await deployments.fixture(["all"]);
 				mouseNft = await ethers.getContract("MouseNFT");
 				mouseGameMock = await ethers.getContract("MouseGameMock");

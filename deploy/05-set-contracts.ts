@@ -20,6 +20,9 @@ const setContracts: DeployFunction = async function (hre: HardhatRuntimeEnvironm
 				contractsAddress.CheeseToken[0],
 				contractsAddress.PrizeToken[0]
 			);
+
+			const mouseNftMock = await ethers.getContract("MouseNftMock", deployer);
+			await mouseNftMock.setCheeseToken(contractsAddress.CheeseToken[0]);
 		}
 
 		const game = await ethers.getContract("MouseGame", deployer);

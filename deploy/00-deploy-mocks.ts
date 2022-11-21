@@ -17,9 +17,16 @@ const deployGame: DeployFunction = async function (hre: HardhatRuntimeEnvironmen
 		deployer
 	];
 
-	await deploy("MouseGameMock", {
+	const MouseGameMock = await deploy("MouseGameMock", {
 		from: deployer,
 		args,
+		log: true,
+		waitConfirmations: 1
+	});
+
+	await deploy("MouseNftMock", {
+		from: deployer,
+		args: [MouseGameMock.address],
 		log: true,
 		waitConfirmations: 1
 	});

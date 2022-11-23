@@ -9,9 +9,13 @@ export function getContractAddress() {
 export function setContractAddress(chain: string, name: string, address: string) {
 	const contractsAddress = getContractAddress();
 	if (contractsAddress[chain][name][0] === address) return;
-	contractsAddress[chain][name] = [
-		address,
-		...(contractsAddress[chain][name] ? contractsAddress[chain][name] : [])
-	];
+	if (chain === "hardhat") {
+		contractsAddress[chain][name] = [address];
+	} else {
+		contractsAddress[chain][name] = [
+			address,
+			...(contractsAddress[chain][name] ? contractsAddress[chain][name] : [])
+		];
+	}
 	writeFileSync(JSON_PATH, JSON.stringify(contractsAddress));
 }

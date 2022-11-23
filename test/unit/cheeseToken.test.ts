@@ -16,7 +16,7 @@ import {CheeseToken, MouseGameMock, MouseNftMock} from "../../typechain-types";
 				const accounts = await ethers.getSigners();
 				deployer = accounts[0];
 				player = accounts[1];
-				await deployments.fixture(["all"]);
+				await deployments.fixture(["cheese", "gameMock", "mouseMock"]);
 				cheeseToken = await ethers.getContract("CheeseToken");
 				mouseGameMock = await ethers.getContract("MouseGameMock");
 				mouseNftMock = await ethers.getContract("MouseNftMock");

@@ -14,7 +14,7 @@ import {MouseGameMock, PrizeToken} from "../../typechain-types";
 				const accounts = await ethers.getSigners();
 				deployer = accounts[0];
 
-				await deployments.fixture(["all"]);
+				await deployments.fixture(["gameMock", "prize"]);
 				mouseGameMock = await ethers.getContract("MouseGameMock");
 				prizeToken = await ethers.getContract("PrizeToken");
 			});

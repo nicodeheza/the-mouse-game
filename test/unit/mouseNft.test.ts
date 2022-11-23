@@ -2,6 +2,7 @@ import {expect} from "chai";
 import {deployments, ethers, network} from "hardhat";
 import {SignerWithAddress} from "hardhat-deploy-ethers/signers";
 import {developmentChains} from "../../helper-hardhat-config";
+import {getContractAddress} from "../../scripts/contractsAddress";
 import {MouseNFT, MouseGameMock, CheeseToken} from "../../typechain-types";
 
 !developmentChains.includes(network.name)
@@ -16,7 +17,7 @@ import {MouseNFT, MouseGameMock, CheeseToken} from "../../typechain-types";
 				const accounts = await ethers.getSigners();
 				deployer = accounts[0];
 				player1 = accounts[1];
-				await deployments.fixture(["all"]);
+				await deployments.fixture(["mouseNftTest", "mouse", "gameMock"]);
 				mouseNft = await ethers.getContract("MouseNFT");
 				mouseGameMock = await ethers.getContract("MouseGameMock");
 				cheeseToken = await ethers.getContract("CheeseToken");

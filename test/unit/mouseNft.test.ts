@@ -2,7 +2,6 @@ import {expect} from "chai";
 import {deployments, ethers, network} from "hardhat";
 import {SignerWithAddress} from "hardhat-deploy-ethers/signers";
 import {developmentChains} from "../../helper-hardhat-config";
-import {getContractAddress} from "../../scripts/contractsAddress";
 import {MouseNFT, MouseGameMock, CheeseToken} from "../../typechain-types";
 
 !developmentChains.includes(network.name)

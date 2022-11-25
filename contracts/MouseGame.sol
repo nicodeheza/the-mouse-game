@@ -24,7 +24,7 @@ contract MouseGame is RandomNumber, Ownable {
         address player;
     }
 
-    uint256 constant ENTRANCE_FEE = 0.0014 ether;
+    uint256 constant ENTRANCE_FEE = 0.13 ether;
     uint256 constant INSCRIPTION_LIMIT = 10 minutes;
     uint256 constant GAME_DURATION = 2 hours;
     uint256 constant CHEESE_INITIAL_AMOUNT = 240;
@@ -88,10 +88,10 @@ contract MouseGame is RandomNumber, Ownable {
         }
     }
 
-    function fulfillRandomWords(uint256, uint256[] memory _randomWords)
-        internal
-        override
-    {
+    function fulfillRandomWords(
+        uint256,
+        uint256[] memory _randomWords
+    ) internal override {
         uint256 mouseOwnerIndex = _randomWords[0] % s_players.length;
         address mouseOwner = s_players[mouseOwnerIndex];
         mouseNft.mint(mouseOwner);

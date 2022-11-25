@@ -3,7 +3,13 @@ import {expect} from "chai";
 import {deployments, ethers, network} from "hardhat";
 import {SignerWithAddress} from "hardhat-deploy-ethers/signers";
 import {developmentChains} from "../../helper-hardhat-config";
-import {CheeseToken, MouseGame} from "../../typechain-types";
+import {
+	CheeseToken,
+	LinkTokenInterface,
+	LinkTokenInterface__factory,
+	MouseGame
+} from "../../typechain-types";
+import {getContractAddress} from "../../scripts/contractsAddress";
 
 !developmentChains.includes(network.name)
 	? describe.skip
@@ -11,7 +17,10 @@ import {CheeseToken, MouseGame} from "../../typechain-types";
 			let deployer: SignerWithAddress,
 				players: SignerWithAddress[],
 				mouseGame: MouseGame,
-				cheeseToken: CheeseToken;
+				cheeseToken: CheeseToken,
+				link: LinkTokenInterface;
+			const transactionFee = ethers.utils.parseUnits("0.13", "ether");
+			const inscriptionLimit = 10 * 60;
 
 			this.beforeAll(() => (process.env.MOUSE_TEST = "true"));
 
@@ -22,13 +31,13 @@ import {CheeseToken, MouseGame} from "../../typechain-types";
 				await deployments.fixture(["game", "cheese", "prize", "mouse"]);
 				mouseGame = await ethers.getContract("MouseGame");
 				cheeseToken = await ethers.getContract("CheeseToken");
+				const linkAddress = getContractAddress()[network.name].linkToken[0];
+				link = LinkTokenInterface__factory.connect(linkAddress, deployer);
 			});
 
 			this.afterAll(() => (process.env.MOUSE_TEST = ""));
 
 			describe("inscribe", function () {
-				const transactionFee = ethers.utils.parseUnits("0.0014", "ether");
-				const inscriptionLimit = 10 * 60;
 				it("revert if registration time expired", async function () {
 					await mouseGame.connect(players[0]).inscribe({value: transactionFee});
 					await network.provider.send("evm_increaseTime", [inscriptionLimit + 60]);
@@ -97,14 +106,95 @@ import {CheeseToken, MouseGame} from "../../typechain-types";
 						mouseGame.connect(players[0]).startGame()
 					).to.have.been.rejectedWith("MouseGame__OnlyReferee()");
 				});
-				it("revert if the inscription time didn't end", async function () {});
-				it("if the minimum of player didn't was reach reset the game", async function () {});
-				it("the necessary amount of link must be swapped", async function () {});
+				it("revert if the inscription time didn't end", async function () {
+					await mouseGame.connect(players[0]).inscribe({value: transactionFee});
+					await network.provider.send("evm_increaseTime", [60]);
+					await network.provider.send("evm_mine");
+					await expect(mouseGame.startGame()).to.have.been.rejectedWith(
+						"MouseGame__notReadyToStart()"
+					);
+				});
+				it("if the minimum of player didn't was reach return players eth", async function () {
+					const initialBalance1 = await players[0].getBalance();
+					const initialBalance2 = await players[1].getBalance();
+					const tx1 = await mouseGame
+						.connect(players[0])
+						.inscribe({value: transactionFee});
+					const tx2 = await mouseGame
+						.connect(players[1])
+						.inscribe({value: transactionFee});
+					const receipt1 = await tx1.wait();
+					const receipt2 = await tx2.wait();
+					const gas1 = receipt1.cumulativeGasUsed.mul(receipt1.effectiveGasPrice);
+					const gas2 = receipt2.cumulativeGasUsed.mul(receipt2.effectiveGasPrice);
+
+					await network.provider.send("evm_increaseTime", [inscriptionLimit]);
+					await network.provider.send("evm_mine");
+
+					const startGameTx = await mouseGame.startGame();
+					startGameTx.wait();
+
+					const finalBalance1 = await players[0].getBalance();
+					const finalBalance2 = await players[1].getBalance();
+
+					expect(finalBalance1).to.be.equal(initialBalance1.sub(gas1));
+					expect(finalBalance2).to.be.equal(initialBalance2.sub(gas2));
+				});
+				it("if the minimum of player didn't was reach send back cheese token to the game", async function () {
+					const initialGameCheese = await cheeseToken.balanceOf(mouseGame.address);
+
+					await mouseGame.connect(players[0]).inscribe({value: transactionFee});
+					await mouseGame.connect(players[1]).inscribe({value: transactionFee});
+
+					await network.provider.send("evm_increaseTime", [inscriptionLimit]);
+					await network.provider.send("evm_mine");
+
+					await mouseGame.startGame();
+
+					const finalGameCheese = await cheeseToken.balanceOf(mouseGame.address);
+					const player1Cheese = await cheeseToken.balanceOf(players[0].address);
+					const player2Cheese = await cheeseToken.balanceOf(players[1].address);
+
+					expect(finalGameCheese).to.be.equal(initialGameCheese);
+					expect(player1Cheese).to.be.equal(0);
+					expect(player2Cheese).to.be.equal(0);
+				});
+				it("if the minimum of player didn't was reach reset inscription time", async function () {
+					await mouseGame.connect(players[0]).inscribe({value: transactionFee});
+
+					await network.provider.send("evm_increaseTime", [inscriptionLimit]);
+					await network.provider.send("evm_mine");
+
+					await mouseGame.startGame();
+
+					const inscriptionTimeLeft = await mouseGame.getInscriptionTimeLeft();
+					expect(inscriptionTimeLeft).to.be.equal(9999);
+				});
+				it("if the minimum of player didn't was reach emit an event", async function () {
+					await mouseGame.connect(players[0]).inscribe({value: transactionFee});
+
+					await network.provider.send("evm_increaseTime", [inscriptionLimit]);
+					await network.provider.send("evm_mine");
+
+					await expect(mouseGame.startGame()).to.emit(mouseGame, "gameReverted");
+				});
+				it("the necessary amount of link must be swapped", async function () {
+					const promiseArray = new Array(5)
+						.fill(true)
+						.map((_, i) =>
+							mouseGame.connect(players[i]).inscribe({value: transactionFee})
+						);
+					await Promise.all(promiseArray);
+					await network.provider.send("evm_increaseTime", [inscriptionLimit]);
+					await network.provider.send("evm_mine");
+					await mouseGame.startGame();
+					const linkBalance = await link.balanceOf(mouseGame.address);
+					expect(linkBalance).to.be.equal(1);
+				});
 				it("one random player must receive the mouse nft", async function () {});
 				it("star game time must be set", async function () {});
 				it("star game time must be set", async function () {});
 			});
-
 			describe("endGame", function () {
 				it("only the referee can call this function", async function () {});
 				it("revert if game didn't end", async function () {});

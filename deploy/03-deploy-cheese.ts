@@ -13,7 +13,7 @@ const deployCheese: DeployFunction = async function (hre: HardhatRuntimeEnvironm
 
 	const contractsAddress = getContractAddress()[networkName];
 	let args;
-	if (process.env.NODE_ENV === "test") {
+	if (process.env.NODE_ENV === "test" && !process.env.MOUSE_TEST) {
 		const gameMock = await ethers.getContract("MouseGameMock", deployer);
 		const mouseNftMock = await ethers.getContract("MouseNftMock", deployer);
 		args = [gameMock.address, mouseNftMock.address, 2400];

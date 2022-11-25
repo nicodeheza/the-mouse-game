@@ -12,7 +12,7 @@ const deployPrize: DeployFunction = async function (hre: HardhatRuntimeEnvironme
 	const {name: networkName} = network;
 
 	let args;
-	if (process.env.NODE_ENV === "test") {
+	if (process.env.NODE_ENV === "test" && !process.env.MOUSE_TEST) {
 		const mouseGameMock = await ethers.getContract("MouseGameMock");
 		args = [mouseGameMock.address];
 	} else {

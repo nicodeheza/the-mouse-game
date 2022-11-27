@@ -278,4 +278,6 @@ contract MouseGame is RandomNumber, Ownable {
         if (msg.sender != i_referee) revert MouseGame__OnlyReferee();
         _;
     }
+
+    receive() external payable {}
 }

@@ -19,10 +19,9 @@ contract MouseNFT is ERC721, GameMinion, Ownable {
     CheeseToken cheeseToken;
     MouseGame game;
 
-    constructor(address gameAddress)
-        ERC721("Mouse", "M")
-        GameMinion(gameAddress)
-    {
+    constructor(
+        address payable gameAddress
+    ) ERC721("Mouse", "M") GameMinion(gameAddress) {
         game = MouseGame(gameAddress);
     }
 

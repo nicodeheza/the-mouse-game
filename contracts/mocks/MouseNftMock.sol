@@ -4,7 +4,7 @@ pragma solidity ^0.8.9;
 import "../MouseNFT.sol";
 
 contract MouseNftMock is MouseNFT {
-    constructor(address gameAddress) MouseNFT(gameAddress) {}
+    constructor(address payable gameAddress) MouseNFT(gameAddress) {}
 
     function transferCheese(address to, uint256 amount) public returns (bool) {
         bool result = cheeseToken.transfer(to, amount);

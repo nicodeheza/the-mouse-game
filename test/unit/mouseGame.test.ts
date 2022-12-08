@@ -3,13 +3,8 @@ import {expect} from "chai";
 import {deployments, ethers, network} from "hardhat";
 import {SignerWithAddress} from "hardhat-deploy-ethers/signers";
 import {developmentChains} from "../../helper-hardhat-config";
-import {
-	CheeseToken,
-	LinkTokenInterface,
-	LinkTokenInterface__factory,
-	MouseGame
-} from "../../typechain-types";
-import {getContractAddress} from "../../scripts/contractsAddress";
+import {CheeseToken, MouseGame, MouseNFT} from "../../typechain-types";
+import mineBlocks from "../../helpers/mineBlocks";
 
 !developmentChains.includes(network.name)
 	? describe.skip
@@ -18,8 +13,8 @@ import {getContractAddress} from "../../scripts/contractsAddress";
 				players: SignerWithAddress[],
 				mouseGame: MouseGame,
 				cheeseToken: CheeseToken,
-				link: LinkTokenInterface;
-			const transactionFee = ethers.utils.parseUnits("0.13", "ether");
+				mouseNft: MouseNFT;
+			const transactionFee = ethers.utils.parseUnits("10", "ether");
 			const inscriptionLimit = 10 * 60;
 
 			this.beforeAll(() => (process.env.MOUSE_TEST = "true"));
@@ -28,11 +23,10 @@ import {getContractAddress} from "../../scripts/contractsAddress";
 				const accounts = await ethers.getSigners();
 				deployer = accounts[0];
 				players = accounts.slice(1);
-				await deployments.fixture(["game", "cheese", "prize", "mouse"]);
+				await deployments.fixture(["vrfMock", "game", "cheese", "prize", "mouse"]);
 				mouseGame = await ethers.getContract("MouseGame");
 				cheeseToken = await ethers.getContract("CheeseToken");
-				const linkAddress = getContractAddress()[network.name].linkToken[0];
-				link = LinkTokenInterface__factory.connect(linkAddress, deployer);
+				mouseNft = await ethers.getContract("MouseNFT");
 			});
 
 			this.afterAll(() => (process.env.MOUSE_TEST = ""));
@@ -187,13 +181,30 @@ import {getContractAddress} from "../../scripts/contractsAddress";
 					await Promise.all(promiseArray);
 					await network.provider.send("evm_increaseTime", [inscriptionLimit]);
 					await network.provider.send("evm_mine");
-					await mouseGame.startGame();
-					const linkBalance = await link.balanceOf(mouseGame.address);
-					expect(linkBalance).to.be.equal(1);
+					const tx = await mouseGame.startGame();
+					const receipt = await tx.wait();
+					const convertedEvent = receipt.events?.filter((e) => {
+						return e.event == "Converted";
+					})[0];
+					const args = convertedEvent?.args?.map((arg) => arg.toString()) || [1, 2];
+					expect(args[0]).to.be.equal(args[1]);
 				});
-				it("one random player must receive the mouse nft", async function () {});
+				it("one random player must receive the mouse nft", async function () {
+					const promiseArray = new Array(5)
+						.fill(true)
+						.map((_, i) =>
+							mouseGame.connect(players[i]).inscribe({value: transactionFee})
+						);
+					await Promise.all(promiseArray);
+					await network.provider.send("evm_increaseTime", [inscriptionLimit]);
+					await network.provider.send("evm_mine");
+					const tx = await mouseGame.startGame();
+					await tx.wait();
+					expect(await mouseNft.ownerOf(1)).to.be.equal(players[4]);
+				});
 				it("star game time must be set", async function () {});
-				it("star game time must be set", async function () {});
+				it("revert if the game is in progress", async function () {});
+				it("emit gameStarted event", async function () {});
 			});
 			describe("endGame", function () {
 				it("only the referee can call this function", async function () {});

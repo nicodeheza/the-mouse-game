@@ -7,6 +7,8 @@ import "./RandomNumber.sol";
 import "./MouseNFT.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+import "hardhat/console.sol";
+
 error MouseGame__inscriptionClose();
 error MouseGame__underpayment();
 error MouseGame__alreadyRegistered();
@@ -24,7 +26,7 @@ contract MouseGame is RandomNumber, Ownable {
         address player;
     }
 
-    uint256 constant ENTRANCE_FEE = 0.13 ether;
+    uint256 constant ENTRANCE_FEE = 10 ether;
     uint256 constant INSCRIPTION_LIMIT = 10 minutes;
     uint256 constant GAME_DURATION = 2 hours;
     uint256 constant CHEESE_INITIAL_AMOUNT = 240;
@@ -81,6 +83,7 @@ contract MouseGame is RandomNumber, Ownable {
 
     function startGame() public onlyReferee {
         if (getInscriptionTimeLeft() > 0) revert MouseGame__notReadyToStart();
+        if (getGameTimeLeft() < 9999) revert MouseGame__gameInProgress();
         if (s_players.length < MIN_PLAYERS) {
             revertGame();
         } else {
@@ -94,7 +97,9 @@ contract MouseGame is RandomNumber, Ownable {
     ) internal override {
         uint256 mouseOwnerIndex = _randomWords[0] % s_players.length;
         address mouseOwner = s_players[mouseOwnerIndex];
+        console.log(mouseOwnerIndex);
         mouseNft.mint(mouseOwner);
+        console.log("minted");
         s_gameStartTime = block.timestamp;
 
         emit gameStarted(block.timestamp, mouseOwner);

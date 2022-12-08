@@ -4,7 +4,7 @@
   "author": "nicodeheza",
   "license": "MIT",
   "scripts": {
-    "test": "NODE_ENV=test yarn hardhat test"
+    "test": "NODE_ENV=test yarn hardhat test --network hardhat"
   },
   "dependencies": {
     "@chainlink/contracts": "^0.5.1",

@@ -61,6 +61,7 @@ contract MouseGame is RandomNumber, Ownable {
     event gameWinner(address winner);
     event prizeSwaped(address indexed player, uint256 prize, uint256 eth);
     event refereeWithdrawEvent(uint256 amount);
+    event requestRandomPlayer(uint256 requestId);
 
     function inscribe() public payable {
         if (getInscriptionTimeLeft() == 0 || s_players.length >= MAX_PLAYERS) {
@@ -87,7 +88,8 @@ contract MouseGame is RandomNumber, Ownable {
         if (s_players.length < MIN_PLAYERS) {
             revertGame();
         } else {
-            requestRandomWords();
+            uint256 requestId = requestRandomWords();
+            emit requestRandomPlayer(requestId);
         }
     }
 
@@ -96,6 +98,7 @@ contract MouseGame is RandomNumber, Ownable {
         uint256[] memory _randomWords
     ) internal override {
         uint256 mouseOwnerIndex = _randomWords[0] % s_players.length;
+        console.log(mouseOwnerIndex);
         address mouseOwner = s_players[mouseOwnerIndex];
         console.log(mouseOwnerIndex);
         mouseNft.mint(mouseOwner);

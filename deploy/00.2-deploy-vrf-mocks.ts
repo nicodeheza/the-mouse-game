@@ -20,7 +20,11 @@ const deployVrfMock: DeployFunction = async function (hre: HardhatRuntimeEnviron
 
 	await deploy("VRFV2WrapperMock", {
 		from: deployer,
-		args: [vrfCoordinator.address],
+		args: [
+			"0x514910771AF9Ca656af840dff83E8264EcF986CA",
+			"0xDC530D9457755926550b59e8ECcdaE7624181557",
+			vrfCoordinator.address
+		],
 		log: false,
 		waitConfirmations: 1
 	});

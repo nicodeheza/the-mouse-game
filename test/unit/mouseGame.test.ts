@@ -3,8 +3,15 @@ import {expect} from "chai";
 import {deployments, ethers, network} from "hardhat";
 import {SignerWithAddress} from "hardhat-deploy-ethers/signers";
 import {developmentChains} from "../../helper-hardhat-config";
-import {CheeseToken, MouseGame, MouseNFT} from "../../typechain-types";
+import {
+	CheeseToken,
+	MouseGame,
+	MouseNFT,
+	VRFCoordinatorV2Mock,
+	VRFV2WrapperMock
+} from "../../typechain-types";
 import mineBlocks from "../../helpers/mineBlocks";
+import {Event} from "ethers";
 
 !developmentChains.includes(network.name)
 	? describe.skip
@@ -13,7 +20,9 @@ import mineBlocks from "../../helpers/mineBlocks";
 				players: SignerWithAddress[],
 				mouseGame: MouseGame,
 				cheeseToken: CheeseToken,
-				mouseNft: MouseNFT;
+				mouseNft: MouseNFT,
+				vrfMock: VRFCoordinatorV2Mock,
+				wrapperMock: VRFV2WrapperMock;
 			const transactionFee = ethers.utils.parseUnits("10", "ether");
 			const inscriptionLimit = 10 * 60;
 
@@ -27,6 +36,8 @@ import mineBlocks from "../../helpers/mineBlocks";
 				mouseGame = await ethers.getContract("MouseGame");
 				cheeseToken = await ethers.getContract("CheeseToken");
 				mouseNft = await ethers.getContract("MouseNFT");
+				vrfMock = await ethers.getContract("VRFCoordinatorV2Mock");
+				wrapperMock = await ethers.getContract("VRFV2WrapperMock");
 			});
 
 			this.afterAll(() => (process.env.MOUSE_TEST = ""));
@@ -198,9 +209,27 @@ import mineBlocks from "../../helpers/mineBlocks";
 					await Promise.all(promiseArray);
 					await network.provider.send("evm_increaseTime", [inscriptionLimit]);
 					await network.provider.send("evm_mine");
+
 					const tx = await mouseGame.startGame();
-					await tx.wait();
-					expect(await mouseNft.ownerOf(1)).to.be.equal(players[4]);
+					const txReceipt = await tx.wait();
+					await mineBlocks(1);
+
+					const randomEvent = txReceipt.events?.filter(
+						(e) => e.event === "requestRandomPlayer"
+					);
+					const requestId = randomEvent![0].args!.requestId;
+					const fundTx = await vrfMock.fundSubscription(requestId, "9999999999999999999");
+					await fundTx.wait();
+
+					const fulfillTx = await vrfMock.fulfillRandomWords(
+						requestId,
+						wrapperMock.address
+					);
+					await fulfillTx.wait();
+
+					expect(await mouseNft.ownerOf(0)).to.be.equal(players[4]);
+
+					// later make an integration test on testnet!!!
 				});
 				it("star game time must be set", async function () {});
 				it("revert if the game is in progress", async function () {});

@@ -10,7 +10,6 @@ contract MouseGameMock is MouseGame {
         address wrapperAddress,
         address uniswapRouterAddress,
         address referee,
-        uint256 entranceFee,
         uint256 inscriptionLimit,
         uint256 gameDuration
     )
@@ -19,7 +18,6 @@ contract MouseGameMock is MouseGame {
             wrapperAddress,
             uniswapRouterAddress,
             referee,
-            entranceFee,
             inscriptionLimit,
             gameDuration
         )

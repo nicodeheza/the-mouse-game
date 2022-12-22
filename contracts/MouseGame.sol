@@ -26,13 +26,14 @@ contract MouseGame is RandomNumber, Ownable {
         address player;
     }
 
-    uint256 private ENTRANCE_FEE;
+    uint256 private s_entranceFee = 0;
     uint256 private immutable INSCRIPTION_LIMIT;
     uint256 private immutable GAME_DURATION;
     uint256 constant CHEESE_INITIAL_AMOUNT = 240;
     uint256 constant MAX_PLAYERS = 10;
     uint256 constant MIN_PLAYERS = 3;
     uint256 constant REFEREE_INITIAL_PERCENTAGE = 5;
+    uint256 constant BASE_FEE = 0.015 ether;
 
     address public immutable i_referee;
 
@@ -50,12 +51,10 @@ contract MouseGame is RandomNumber, Ownable {
         address wrapperAddress,
         address uniswapRouterAddress,
         address referee,
-        uint256 entranceFee,
         uint256 inscriptionLimit,
         uint256 gameDuration
     ) RandomNumber(linkAddressm, wrapperAddress, uniswapRouterAddress) {
         i_referee = referee;
-        ENTRANCE_FEE = entranceFee;
         INSCRIPTION_LIMIT = inscriptionLimit;
         GAME_DURATION = gameDuration;
     }
@@ -74,8 +73,12 @@ contract MouseGame is RandomNumber, Ownable {
             revert MouseGame__inscriptionClose();
         }
 
-        if (msg.value < ENTRANCE_FEE) revert MouseGame__underpayment();
-        if (msg.value > ENTRANCE_FEE) revert MouseGame__overpaid();
+        if (s_entranceFee == 0) {
+            s_entranceFee = getEntraceFee();
+        }
+
+        if (msg.value < s_entranceFee) revert MouseGame__underpayment();
+        if (msg.value > s_entranceFee) revert MouseGame__overpaid();
         if (isRegistered(msg.sender)) revert MouseGame__alreadyRegistered();
 
         if (s_inscriptionStartTime == 0) {
@@ -123,13 +126,14 @@ contract MouseGame is RandomNumber, Ownable {
                     address(this),
                     CHEESE_INITIAL_AMOUNT
                 );
-                (bool sent, ) = payable(player).call{value: ENTRANCE_FEE}("");
+                (bool sent, ) = payable(player).call{value: s_entranceFee}("");
                 if (!sent) revert MouseGame__tryAgainLater();
                 s_players[i] = address(0);
             }
         }
 
         s_inscriptionStartTime = 0;
+        s_entranceFee = 0;
         emit gameReverted();
     }
 
@@ -194,6 +198,7 @@ contract MouseGame is RandomNumber, Ownable {
         s_gameStartTime = 0;
         s_inscriptionStartTime = 0;
         delete s_players;
+        s_entranceFee = 0;
 
         emit gameWinner(winner.player);
     }
@@ -288,12 +293,11 @@ contract MouseGame is RandomNumber, Ownable {
         prizeToken = PrizeToken(prizeTokenAddress);
     }
 
-    function getEntraceFee() external view returns (uint256 entranceFee) {
-        return ENTRANCE_FEE;
-    }
-
-    function setEntraceFee(uint256 newEntraceFee) external onlyOwner {
-        ENTRANCE_FEE = newEntraceFee;
+    function getEntraceFee() public view returns (uint256 entranceFee) {
+        if (s_entranceFee == 0) {
+            return (estimateVRFPrice() / MIN_PLAYERS) + BASE_FEE;
+        }
+        return s_entranceFee;
     }
 
     function getInscriptionLimit()

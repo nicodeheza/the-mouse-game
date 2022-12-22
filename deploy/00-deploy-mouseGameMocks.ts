@@ -16,7 +16,6 @@ const deployGame: DeployFunction = async function (hre: HardhatRuntimeEnvironmen
 		contractsAddress.chainLinkWrapper[0],
 		contractsAddress.uniswapRouter2[0],
 		deployer,
-		ethers.utils.parseUnits((10).toString(), "ether"),
 		10 * 60,
 		2 * 60 * 60
 	];

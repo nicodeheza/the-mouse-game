@@ -32,4 +32,4 @@ const setContracts: DeployFunction = async function (hre: HardhatRuntimeEnvironm
 };
 
 export default setContracts;
-setContracts.tags = ["game", "all"];
+setContracts.tags = ["game", "all", "deploy"];

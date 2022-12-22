@@ -28,4 +28,4 @@ const setContracts: DeployFunction = async function (hre: HardhatRuntimeEnvironm
 };
 
 export default setContracts;
-setContracts.tags = ["mouse", "all"];
+setContracts.tags = ["mouse", "all", "deploy"];

@@ -34,4 +34,4 @@ const deployCheese: DeployFunction = async function (hre: HardhatRuntimeEnvironm
 };
 
 export default deployCheese;
-deployCheese.tags = ["cheese", "all"];
+deployCheese.tags = ["cheese", "all", "deploy"];

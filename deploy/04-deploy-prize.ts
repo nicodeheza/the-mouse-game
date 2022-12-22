@@ -33,4 +33,4 @@ const deployPrize: DeployFunction = async function (hre: HardhatRuntimeEnvironme
 };
 
 export default deployPrize;
-deployPrize.tags = ["prize", "all"];
+deployPrize.tags = ["prize", "all", "deploy"];

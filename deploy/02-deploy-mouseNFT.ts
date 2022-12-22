@@ -33,4 +33,4 @@ const deployMouse: DeployFunction = async function (hre: HardhatRuntimeEnvironme
 };
 
 export default deployMouse;
-deployMouse.tags = ["mouse", "all"];
+deployMouse.tags = ["mouse", "all", "deploy"];

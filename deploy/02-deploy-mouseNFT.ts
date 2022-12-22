@@ -3,6 +3,8 @@ import {HardhatRuntimeEnvironment} from "hardhat/types";
 import {DeployFunction} from "hardhat-deploy/types";
 import {getContractAddress, setContractAddress} from "../scripts/contractsAddress";
 import {ethers} from "hardhat";
+import {developmentChains} from "../helper-hardhat-config";
+import verify from "../utils/verify";
 
 const deployMouse: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 	const {deployments, getNamedAccounts, network} = hre;
@@ -29,7 +31,10 @@ const deployMouse: DeployFunction = async function (hre: HardhatRuntimeEnvironme
 
 	setContractAddress(networkName, "MouseNFT", address);
 
-	// verify
+	if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KET) {
+		console.log("Verifying...");
+		await verify(address, args);
+	}
 };
 
 export default deployMouse;

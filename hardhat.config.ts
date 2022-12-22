@@ -26,7 +26,10 @@ const config: HardhatUserConfig = {
 	namedAccounts: {
 		deployer: 0
 	},
-	solidity: "0.8.17"
+	solidity: "0.8.17",
+	etherscan: {
+		apiKey: process.env.ETHERSCAN_API_KET
+	}
 };
 
 export default config;

@@ -1,6 +1,7 @@
 import {HardhatRuntimeEnvironment} from "hardhat/types";
 import {DeployFunction} from "hardhat-deploy/types";
 import {getContractAddress} from "../scripts/contractsAddress";
+import {ethers} from "hardhat";
 
 const deployGame: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 	const {deployments, getNamedAccounts, network} = hre;
@@ -14,7 +15,10 @@ const deployGame: DeployFunction = async function (hre: HardhatRuntimeEnvironmen
 		contractsAddress.linkToken[0],
 		contractsAddress.chainLinkWrapper[0],
 		contractsAddress.uniswapRouter2[0],
-		deployer
+		deployer,
+		ethers.utils.parseUnits((10).toString(), "ether"),
+		10 * 60,
+		2 * 60 * 60
 	];
 
 	await deploy("MouseGameMock", {

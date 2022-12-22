@@ -56,6 +56,7 @@ contract MouseNFT is ERC721, GameMinion, Ownable {
         s_tokenCount += 1;
         console.log("gonna mint with args", to, s_tokenCount);
         _mint(to, s_tokenCount);
+        console.log("mintttted");
     }
 
     function burn() external onlyGame {

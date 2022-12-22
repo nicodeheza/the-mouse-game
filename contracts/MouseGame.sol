@@ -26,9 +26,9 @@ contract MouseGame is RandomNumber, Ownable {
         address player;
     }
 
-    uint256 constant ENTRANCE_FEE = 10 ether;
-    uint256 constant INSCRIPTION_LIMIT = 10 minutes;
-    uint256 constant GAME_DURATION = 2 hours;
+    uint256 private ENTRANCE_FEE;
+    uint256 private immutable INSCRIPTION_LIMIT;
+    uint256 private immutable GAME_DURATION;
     uint256 constant CHEESE_INITIAL_AMOUNT = 240;
     uint256 constant MAX_PLAYERS = 10;
     uint256 constant MIN_PLAYERS = 3;
@@ -49,9 +49,15 @@ contract MouseGame is RandomNumber, Ownable {
         address linkAddressm,
         address wrapperAddress,
         address uniswapRouterAddress,
-        address referee
+        address referee,
+        uint256 entranceFee,
+        uint256 inscriptionLimit,
+        uint256 gameDuration
     ) RandomNumber(linkAddressm, wrapperAddress, uniswapRouterAddress) {
         i_referee = referee;
+        ENTRANCE_FEE = entranceFee;
+        INSCRIPTION_LIMIT = inscriptionLimit;
+        GAME_DURATION = gameDuration;
     }
 
     event playerInscribed(uint256 indexed time, address player);
@@ -100,7 +106,7 @@ contract MouseGame is RandomNumber, Ownable {
         uint256 mouseOwnerIndex = _randomWords[0] % s_players.length;
         console.log(mouseOwnerIndex);
         address mouseOwner = s_players[mouseOwnerIndex];
-        console.log(mouseOwnerIndex);
+        console.log("mouseOwnerIndex:", mouseOwnerIndex);
         mouseNft.mint(mouseOwner);
         console.log("minted");
         s_gameStartTime = block.timestamp;
@@ -280,6 +286,26 @@ contract MouseGame is RandomNumber, Ownable {
         mouseNft = MouseNFT(mouseNftAddress);
         cheeseToken = CheeseToken(cheeseTokenAddress);
         prizeToken = PrizeToken(prizeTokenAddress);
+    }
+
+    function getEntraceFee() external view returns (uint256 entranceFee) {
+        return ENTRANCE_FEE;
+    }
+
+    function setEntraceFee(uint256 newEntraceFee) external onlyOwner {
+        ENTRANCE_FEE = newEntraceFee;
+    }
+
+    function getInscriptionLimit()
+        external
+        view
+        returns (uint256 inscriptionLimit)
+    {
+        return INSCRIPTION_LIMIT;
+    }
+
+    function getGameDuration() external view returns (uint256 gameDuration) {
+        return GAME_DURATION;
     }
 
     modifier onlyReferee() {

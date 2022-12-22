@@ -11,6 +11,16 @@ const config: HardhatUserConfig = {
 			forking: {
 				url: process.env.MAINNET_URL || ""
 			}
+			// loggingEnabled: true,
+		},
+		goerli: {
+			url: process.env.GOERLI_URL,
+			accounts: [
+				process.env.GOERLI_ACCOUNT_1 || "",
+				process.env.GOERLI_ACCOUNT_2 || "",
+				process.env.GOERLI_ACCOUNT_3 || "",
+				process.env.GOERLI_ACCOUNT_4 || ""
+			]
 		}
 	},
 	namedAccounts: {

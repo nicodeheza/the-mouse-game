@@ -9,8 +9,21 @@ contract MouseGameMock is MouseGame {
         address linkAddressm,
         address wrapperAddress,
         address uniswapRouterAddress,
-        address referee
-    ) MouseGame(linkAddressm, wrapperAddress, uniswapRouterAddress, referee) {
+        address referee,
+        uint256 entranceFee,
+        uint256 inscriptionLimit,
+        uint256 gameDuration
+    )
+        MouseGame(
+            linkAddressm,
+            wrapperAddress,
+            uniswapRouterAddress,
+            referee,
+            entranceFee,
+            inscriptionLimit,
+            gameDuration
+        )
+    {
         s_players = [msg.sender];
     }
 

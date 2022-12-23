@@ -12,8 +12,6 @@ contract SwapEthToLink {
     IUniswapV2Router02 uniswapRouter;
     address private immutable i_LinkAddress;
 
-    uint256 internal s_linkBalance = 0;
-
     constructor(address uniswapRouterAddress, address linkAddress) {
         uniswapRouter = IUniswapV2Router02(uniswapRouterAddress);
         i_LinkAddress = linkAddress;
@@ -41,7 +39,6 @@ contract SwapEthToLink {
         uint256 resultAmount = uniswapRouter.swapETHForExactTokens{
             value: ethToSwap
         }(linkAmount, getPathForEthToLink(), address(this), deadline)[1];
-        s_linkBalance += resultAmount;
         emit Converted(linkAmount, resultAmount, ethToSwap);
         return resultAmount;
     }
@@ -58,9 +55,5 @@ contract SwapEthToLink {
         path[1] = i_LinkAddress;
 
         return path;
-    }
-
-    function spendLink(uint256 linkToSpend) internal {
-        s_linkBalance -= linkToSpend;
     }
 }

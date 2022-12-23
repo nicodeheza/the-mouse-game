@@ -20,6 +20,14 @@ error MouseGame__gameInProgress();
 error MouseGame__underfunded();
 error MouseGame__OnlyReferee();
 
+/*
+    TODO:
+        - add owner balance
+        - owner should keep some eth on game ends
+        - add owner widthdraw function
+        - review sawp function
+ */
+
 contract MouseGame is RandomNumber, Ownable {
     struct Winner {
         uint256 balance;
@@ -47,13 +55,21 @@ contract MouseGame is RandomNumber, Ownable {
 
     constructor(
         address linkAddressm,
-        address wrapperAddress,
+        address VRFCoordinatorAddress,
         address uniswapRouterAddress,
+        bytes32 keyHash,
         address referee,
         uint256 entranceFee,
         uint256 inscriptionLimit,
         uint256 gameDuration
-    ) RandomNumber(linkAddressm, wrapperAddress, uniswapRouterAddress) {
+    )
+        RandomNumber(
+            linkAddressm,
+            VRFCoordinatorAddress,
+            uniswapRouterAddress,
+            keyHash
+        )
+    {
         i_referee = referee;
         ENTRANCE_FEE = entranceFee;
         INSCRIPTION_LIMIT = inscriptionLimit;
@@ -306,6 +322,15 @@ contract MouseGame is RandomNumber, Ownable {
 
     function getGameDuration() external view returns (uint256 gameDuration) {
         return GAME_DURATION;
+    }
+
+    function getVRFSubscriptionFunds()
+        external
+        view
+        onlyOwner
+        returns (uint256 funds)
+    {
+        return _getVRFSubscriptionFunds();
     }
 
     modifier onlyReferee() {

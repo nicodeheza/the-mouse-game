@@ -1,37 +1,67 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
-import "@chainlink/contracts/src/v0.8/VRFV2WrapperConsumerBase.sol";
+import "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
+import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
+import "@chainlink/contracts/src/v0.8/interfaces/LinkTokenInterface.sol";
 import "./SawpEthToLink.sol";
 
 import "hardhat/console.sol";
 
 error RandomNumber__insufficientFunds();
 
-abstract contract RandomNumber is VRFV2WrapperConsumerBase, SwapEthToLink {
+abstract contract RandomNumber is VRFConsumerBaseV2, SwapEthToLink {
     uint32 constant callbackGasLimit = 100000;
+    VRFCoordinatorV2Interface immutable VRFCoordinator;
+    LinkTokenInterface immutable Link;
+    uint64 private immutable VRFSubscriptionId;
+    bytes32 private immutable keyHash;
 
     constructor(
         address linkAdderess,
-        address wrapperAddress,
-        address uniswapRouterAddress
+        address VRFCoordinatorAddress,
+        address uniswapRouterAddress,
+        bytes32 _keyHash
     )
-        VRFV2WrapperConsumerBase(linkAdderess, wrapperAddress)
+        VRFConsumerBaseV2(VRFCoordinatorAddress)
         SwapEthToLink(uniswapRouterAddress, linkAdderess)
-    {}
+    {
+        VRFCoordinator = VRFCoordinatorV2Interface(VRFCoordinatorAddress);
+        Link = LinkTokenInterface(linkAdderess);
+        keyHash = _keyHash;
+        VRFSubscriptionId = VRFCoordinator.createSubscription();
+        VRFCoordinator.addConsumer(VRFSubscriptionId, address(this));
+    }
 
     function requestRandomWords() internal returns (uint256 requestID) {
-        uint256 price = VRF_V2_WRAPPER.calculateRequestPrice(callbackGasLimit);
-        uint256 linkToGet;
-        if (price < s_linkBalance) {
-            linkToGet = 0;
-        } else {
-            linkToGet = price - s_linkBalance;
-        }
+        requestID = VRFCoordinator.requestRandomWords(
+            keyHash,
+            VRFSubscriptionId,
+            3,
+            callbackGasLimit,
+            3
+        );
+    }
 
-        convertEthToLink(linkToGet);
+    function _getVRFSubscriptionFunds() internal view returns (uint256 funds) {
+        (funds, , , ) = VRFCoordinator.getSubscription(VRFSubscriptionId);
+    }
 
-        if (s_linkBalance < price) revert RandomNumber__insufficientFunds();
-        return requestRandomness(callbackGasLimit, 1, 1);
+    function foudVRFSubscriptionsWithEth() external payable {
+        uint256 amount = convertEthToLink(msg.value);
+        Link.transferAndCall(
+            address(VRFCoordinator),
+            amount,
+            abi.encode(VRFSubscriptionId)
+        );
+    }
+
+    function foudVRFSubscriptionsWithLink(uint256 amount) external {
+        Link.approve(msg.sender, amount);
+        Link.transferAndCall(
+            address(VRFCoordinator),
+            amount,
+            abi.encode(VRFSubscriptionId)
+        );
     }
 }

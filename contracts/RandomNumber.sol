@@ -21,7 +21,7 @@ abstract contract RandomNumber is VRFV2WrapperConsumerBase, SwapEthToLink {
     {}
 
     function requestRandomWords() internal returns (uint256 requestID) {
-        uint256 price = estimateVRFPrice();
+        uint256 price = VRF_V2_WRAPPER.calculateRequestPrice(callbackGasLimit);
         uint256 linkToGet;
         if (price < s_linkBalance) {
             linkToGet = 0;
@@ -33,9 +33,5 @@ abstract contract RandomNumber is VRFV2WrapperConsumerBase, SwapEthToLink {
 
         if (s_linkBalance < price) revert RandomNumber__insufficientFunds();
         return requestRandomness(callbackGasLimit, 1, 1);
-    }
-
-    function estimateVRFPrice() internal view returns (uint256 price) {
-        price = VRF_V2_WRAPPER.calculateRequestPrice(callbackGasLimit);
     }
 }

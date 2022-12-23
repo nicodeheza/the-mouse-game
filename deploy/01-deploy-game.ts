@@ -21,6 +21,7 @@ const deployGame: DeployFunction = async function (hre: HardhatRuntimeEnvironmen
 			vrfMock.address,
 			contractsAddress.uniswapRouter2[0],
 			deployer,
+			ethers.utils.parseUnits((10).toString(), "ether"),
 			10 * 60,
 			2 * 60 * 60
 		];
@@ -30,6 +31,7 @@ const deployGame: DeployFunction = async function (hre: HardhatRuntimeEnvironmen
 			contractsAddress.chainLinkWrapper[0],
 			contractsAddress.uniswapRouter2[0],
 			deployer,
+			ethers.utils.parseUnits((0.01).toString(), "ether"),
 			5 * 60, //10 * 60,
 			10 * 60 // 2 * 60 * 60
 		];

@@ -15,11 +15,12 @@ const deployGame: DeployFunction = async function (hre: HardhatRuntimeEnvironmen
 	let args;
 	const contractsAddress = getContractAddress()[networkName];
 	if (process.env.NODE_ENV === "test") {
-		const vrfMock = await ethers.getContract("VRFV2WrapperMock");
+		const vrfMock = await ethers.getContract("VRFCoordinatorV2Mock");
 		args = [
 			contractsAddress.linkToken[0],
 			vrfMock.address,
 			contractsAddress.uniswapRouter2[0],
+			"0x9fe0eebf5e446e3c998ec9bb19951541aee00bb90ea201ae456421a2ded86805",
 			deployer,
 			ethers.utils.parseUnits((10).toString(), "ether"),
 			10 * 60,
@@ -28,8 +29,9 @@ const deployGame: DeployFunction = async function (hre: HardhatRuntimeEnvironmen
 	} else {
 		args = [
 			contractsAddress.linkToken[0],
-			contractsAddress.chainLinkWrapper[0],
+			contractsAddress.VRFCoordinator[0],
 			contractsAddress.uniswapRouter2[0],
+			contractsAddress.VRFKeyHash[0],
 			deployer,
 			ethers.utils.parseUnits((0.01).toString(), "ether"),
 			5 * 60, //10 * 60,

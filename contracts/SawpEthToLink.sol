@@ -11,6 +11,7 @@ error SwapEthToLink__insufficientFunds(
 contract SwapEthToLink {
     IUniswapV2Router02 uniswapRouter;
     address private immutable i_LinkAddress;
+    mapping(address => uint) internal s_balance;
 
     constructor(address uniswapRouterAddress, address linkAddress) {
         uniswapRouter = IUniswapV2Router02(uniswapRouterAddress);
@@ -29,16 +30,19 @@ contract SwapEthToLink {
         uint256 deadline = block.timestamp + 30;
         uint256 ethPerLink = getEthForLinkEstimation(1);
         uint256 ethToSwap = linkAmount * ethPerLink;
-        if (ethToSwap > address(this).balance) {
+        if (ethToSwap > s_balance[msg.sender]) {
             revert SwapEthToLink__insufficientFunds(
                 address(this).balance,
                 ethToSwap
             );
         }
 
-        uint256 resultAmount = uniswapRouter.swapETHForExactTokens{
+        s_balance[msg.sender] -= ethToSwap;
+        uint256[] memory result = uniswapRouter.swapETHForExactTokens{
             value: ethToSwap
-        }(linkAmount, getPathForEthToLink(), address(this), deadline)[1];
+        }(linkAmount, getPathForEthToLink(), address(this), deadline);
+        s_balance[msg.sender] -= result[0];
+        uint256 resultAmount = result[1];
         emit Converted(linkAmount, resultAmount, ethToSwap);
         return resultAmount;
     }

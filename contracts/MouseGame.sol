@@ -20,14 +20,6 @@ error MouseGame__gameInProgress();
 error MouseGame__underfunded();
 error MouseGame__OnlyReferee();
 
-/*
-    TODO:
-        - add owner balance
-        - owner should keep some eth on game ends
-        - add owner widthdraw function
-        - review sawp function
- */
-
 contract MouseGame is RandomNumber, Ownable {
     struct Winner {
         uint256 balance;
@@ -41,13 +33,13 @@ contract MouseGame is RandomNumber, Ownable {
     uint256 constant MAX_PLAYERS = 10;
     uint256 constant MIN_PLAYERS = 3;
     uint256 constant REFEREE_INITIAL_PERCENTAGE = 5;
+    uint256 constant OWNER_PERCENTAGE = 5;
 
     address public immutable i_referee;
 
     address[] internal s_players;
     uint256 private s_inscriptionStartTime;
     uint256 private s_gameStartTime;
-    mapping(address => uint) private s_balance;
 
     CheeseToken cheeseToken;
     PrizeToken prizeToken;
@@ -83,6 +75,7 @@ contract MouseGame is RandomNumber, Ownable {
     event gameWinner(address winner);
     event prizeSwaped(address indexed player, uint256 prize, uint256 eth);
     event refereeWithdrawEvent(uint256 amount);
+    event ownerWithdrawEvent(uint256 amount);
     event requestRandomPlayer(uint256 requestId);
 
     function inscribe() public payable {
@@ -200,12 +193,15 @@ contract MouseGame is RandomNumber, Ownable {
             refereePercentage = refereePercentage - totalMinutesDelay;
         }
 
-        uint256 refereeBalance = (refereePercentage * address(this).balance) /
-            100;
-        uint256 gameBalance = address(this).balance - refereeBalance;
+        uint256 roundTotalBalance = s_players.length * ENTRANCE_FEE;
+        uint256 refereeBalance = (refereePercentage * roundTotalBalance) / 100;
+        uint256 ownerBanalnce = (OWNER_PERCENTAGE * roundTotalBalance) / 100;
+        uint256 gameBalance = roundTotalBalance -
+            (refereeBalance + ownerBanalnce);
 
-        s_balance[i_referee] = refereeBalance;
-        s_balance[address(this)] = gameBalance;
+        s_balance[i_referee] += refereeBalance;
+        s_balance[owner()] += ownerBanalnce;
+        s_balance[address(this)] += gameBalance;
 
         s_gameStartTime = 0;
         s_inscriptionStartTime = 0;
@@ -238,6 +234,18 @@ contract MouseGame is RandomNumber, Ownable {
         if (!sent) revert MouseGame__trasactionFail();
 
         emit refereeWithdrawEvent(amount);
+    }
+
+    function ownerWithdraw() public payable onlyOwner {
+        address owner = owner();
+        uint256 amount = s_balance[owner];
+        s_balance[owner] = 0;
+
+        (bool sent, ) = msg.sender.call{value: amount}("");
+
+        if (!sent) revert MouseGame__trasactionFail();
+
+        emit ownerWithdrawEvent(amount);
     }
 
     function isRegistered(address player) public view returns (bool) {
@@ -282,6 +290,10 @@ contract MouseGame is RandomNumber, Ownable {
 
     function getRefereeBalance() public view onlyReferee returns (uint256) {
         return s_balance[i_referee];
+    }
+
+    function getOwnerBalance() public view onlyOwner returns (uint256) {
+        return s_balance[owner()];
     }
 
     function getDelay(

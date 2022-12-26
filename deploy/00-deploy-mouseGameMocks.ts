@@ -13,8 +13,9 @@ const deployGame: DeployFunction = async function (hre: HardhatRuntimeEnvironmen
 	const contractsAddress = getContractAddress()[networkName];
 	const args = [
 		contractsAddress.linkToken[0],
-		contractsAddress.chainLinkWrapper[0],
+		contractsAddress.VRFCoordinator[0],
 		contractsAddress.uniswapRouter2[0],
+		"0x9fe0eebf5e446e3c998ec9bb19951541aee00bb90ea201ae456421a2ded86805",
 		deployer,
 		ethers.utils.parseUnits((10).toString(), "ether"),
 		10 * 60,

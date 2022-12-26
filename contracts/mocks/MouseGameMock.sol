@@ -7,8 +7,9 @@ import "../MouseGame.sol";
 contract MouseGameMock is MouseGame {
     constructor(
         address linkAddressm,
-        address wrapperAddress,
+        address VRFCoordinatorAddress,
         address uniswapRouterAddress,
+        bytes32 keyHash,
         address referee,
         uint256 entranceFee,
         uint256 inscriptionLimit,
@@ -16,8 +17,9 @@ contract MouseGameMock is MouseGame {
     )
         MouseGame(
             linkAddressm,
-            wrapperAddress,
+            VRFCoordinatorAddress,
             uniswapRouterAddress,
+            keyHash,
             referee,
             entranceFee,
             inscriptionLimit,

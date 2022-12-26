@@ -3,6 +3,8 @@ pragma solidity ^0.8.9;
 
 import "./interfaces/uniswapRouter/IUniswapV2Router02.sol";
 
+import "hardhat/console.sol";
+
 error SwapEthToLink__insufficientFunds(
     uint256 balance,
     uint256 necessaryAmount
@@ -18,32 +20,21 @@ contract SwapEthToLink {
         i_LinkAddress = linkAddress;
     }
 
-    event Converted(
-        uint256 needAmount,
-        uint256 linkReceived,
-        uint256 ethSpended
-    );
+    event Converted(uint256 ethAmount, uint256 linkReceived);
 
     function convertEthToLink(
-        uint256 linkAmount
+        uint256 ethAmount
     ) internal returns (uint256 amount) {
         uint256 deadline = block.timestamp + 30;
         uint256 ethPerLink = getEthForLinkEstimation(1);
-        uint256 ethToSwap = linkAmount * ethPerLink;
-        if (ethToSwap > s_balance[msg.sender]) {
-            revert SwapEthToLink__insufficientFunds(
-                address(this).balance,
-                ethToSwap
-            );
-        }
+        uint256 linkToSwap = ethAmount / ethPerLink;
 
-        s_balance[msg.sender] -= ethToSwap;
-        uint256[] memory result = uniswapRouter.swapETHForExactTokens{
-            value: ethToSwap
-        }(linkAmount, getPathForEthToLink(), address(this), deadline);
-        s_balance[msg.sender] -= result[0];
+        uint256[] memory result = uniswapRouter.swapExactETHForTokens{
+            value: ethAmount
+        }(linkToSwap, getPathForEthToLink(), address(this), deadline);
         uint256 resultAmount = result[1];
-        emit Converted(linkAmount, resultAmount, ethToSwap);
+        console.log(resultAmount);
+        emit Converted(ethAmount, resultAmount);
         return resultAmount;
     }
 

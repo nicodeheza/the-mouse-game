@@ -36,8 +36,7 @@ import {Event} from "ethers";
 				mouseGame = await ethers.getContract("MouseGame");
 				cheeseToken = await ethers.getContract("CheeseToken");
 				mouseNft = await ethers.getContract("MouseNFT");
-				vrfMock = await ethers.getContract("VRFCoordinatorV2Mock");
-				wrapperMock = await ethers.getContract("VRFV2WrapperMock");
+				vrfMock = await ethers.getContract("VrfMock");
 			});
 
 			this.afterAll(() => (process.env.MOUSE_TEST = ""));
@@ -183,23 +182,6 @@ import {Event} from "ethers";
 
 					await expect(mouseGame.startGame()).to.emit(mouseGame, "gameReverted");
 				});
-				it("the necessary amount of link must be swapped", async function () {
-					const promiseArray = new Array(5)
-						.fill(true)
-						.map((_, i) =>
-							mouseGame.connect(players[i]).inscribe({value: transactionFee})
-						);
-					await Promise.all(promiseArray);
-					await network.provider.send("evm_increaseTime", [inscriptionLimit]);
-					await network.provider.send("evm_mine");
-					const tx = await mouseGame.startGame();
-					const receipt = await tx.wait();
-					const convertedEvent = receipt.events?.filter((e) => {
-						return e.event == "Converted";
-					})[0];
-					const args = convertedEvent?.args?.map((arg) => arg.toString()) || [1, 2];
-					expect(args[0]).to.be.equal(args[1]);
-				});
 				it("one random player must receive the mouse nft", async function () {
 					const promiseArray = new Array(5)
 						.fill(true)
@@ -210,33 +192,22 @@ import {Event} from "ethers";
 					await network.provider.send("evm_increaseTime", [inscriptionLimit]);
 					await network.provider.send("evm_mine");
 
+					const fundTx = await mouseGame.fundVRFSubscriptionsWithEth({
+						value: ethers.utils.parseUnits((2).toString(), "ether")
+					});
+					await fundTx.wait();
 					const tx = await mouseGame.startGame();
 					const txReceipt = await tx.wait();
-					// await mineBlocks(1);
+					const starEvent = txReceipt.events?.filter((e) => e.event === "gameStarted");
+					const mouseOwner = starEvent![0].args!.firstMouseOwner;
 
-					const randomEvent = txReceipt.events?.filter(
-						(e) => e.event === "requestRandomPlayer"
-					);
-					const requestId = randomEvent![0].args!.requestId;
-					const fundTx = await vrfMock.fundSubscription(requestId, "9999999999999999999");
-					await fundTx.wait();
-
-					const fulfillTx = await vrfMock.fulfillRandomWords(
-						requestId,
-						wrapperMock.address
-					);
-					await fulfillTx.wait();
-					const owner = await mouseNft.ownerOf(1);
-					console.log({owner});
-
-					// expect(await mouseNft.ownerOf(1)).to.be.equal(players[4]);
-
-					// later make an integration test on testnet!!!
+					console.log(mouseOwner);
 				});
 				it("star game time must be set", async function () {});
 				it("revert if the game is in progress", async function () {});
 				it("emit gameStarted event", async function () {});
 			});
+			//add fund tests
 			describe("endGame", function () {
 				it("only the referee can call this function", async function () {});
 				it("revert if game didn't end", async function () {});

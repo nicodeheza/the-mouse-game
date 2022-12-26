@@ -11,7 +11,7 @@ const deployVrfMock: DeployFunction = async function (hre: HardhatRuntimeEnviron
 	const BASE_FEE = "250000000000000000";
 	const GAS_PRICE_LINK = 1e9;
 
-	const vrfCoordinator = await deploy("VRFCoordinatorV2Mock", {
+	const vrfCoordinator = await deploy("VrfMock", {
 		from: deployer,
 		args: [BASE_FEE, GAS_PRICE_LINK],
 		log: false,

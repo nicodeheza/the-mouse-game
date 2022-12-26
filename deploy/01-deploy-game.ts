@@ -15,7 +15,7 @@ const deployGame: DeployFunction = async function (hre: HardhatRuntimeEnvironmen
 	let args;
 	const contractsAddress = getContractAddress()[networkName];
 	if (process.env.NODE_ENV === "test") {
-		const vrfMock = await ethers.getContract("VRFCoordinatorV2Mock");
+		const vrfMock = await ethers.getContract("VrfMock");
 		args = [
 			contractsAddress.linkToken[0],
 			vrfMock.address,

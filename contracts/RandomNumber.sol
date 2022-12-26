@@ -47,7 +47,7 @@ abstract contract RandomNumber is VRFConsumerBaseV2, SwapEthToLink {
         (funds, , , ) = VRFCoordinator.getSubscription(VRFSubscriptionId);
     }
 
-    function foudVRFSubscriptionsWithEth() external payable {
+    function fundVRFSubscriptionsWithEth() external payable {
         uint256 amount = convertEthToLink(msg.value);
         Link.transferAndCall(
             address(VRFCoordinator),
@@ -56,7 +56,7 @@ abstract contract RandomNumber is VRFConsumerBaseV2, SwapEthToLink {
         );
     }
 
-    function foudVRFSubscriptionsWithLink(uint256 amount) external {
+    function fundVRFSubscriptionsWithLink(uint256 amount) external {
         Link.approve(address(this), amount);
         Link.transferAndCall(
             address(VRFCoordinator),

@@ -196,12 +196,35 @@ import {Event} from "ethers";
 						value: ethers.utils.parseUnits((2).toString(), "ether")
 					});
 					await fundTx.wait();
+
 					const tx = await mouseGame.startGame();
 					const txReceipt = await tx.wait();
-					const starEvent = txReceipt.events?.filter((e) => e.event === "gameStarted");
-					const mouseOwner = starEvent![0].args!.firstMouseOwner;
+					const starEvent = txReceipt.events?.filter(
+						(e) => e.event === "requestRandomPlayer"
+					);
+					const requestId = starEvent![0].args!.requestId;
+					await vrfMock.fulfillRandomWords(requestId, mouseGame.address);
 
-					console.log(mouseOwner);
+					await new Promise((resolve, reject) => {
+						mouseGame.once("gameStarted", async (user) => {
+							try {
+								const ownerBalance = await mouseNft.balanceOf(user);
+								expect(ownerBalance).to.be.equal(1);
+
+								const otherPlayers = players.filter(
+									(player, i) => player.address !== user && i < 5
+								);
+
+								const otherPlayersBalance = await Promise.all(
+									otherPlayers.map((player) => mouseNft.balanceOf(player.address))
+								);
+								otherPlayersBalance.forEach((balance) => expect(balance).to.be.equal(0));
+								resolve(user);
+							} catch (error) {
+								reject(error);
+							}
+						});
+					});
 				});
 				it("star game time must be set", async function () {});
 				it("revert if the game is in progress", async function () {});

@@ -11,7 +11,7 @@ import "hardhat/console.sol";
 error RandomNumber__insufficientFunds();
 
 abstract contract RandomNumber is VRFConsumerBaseV2, SwapEthToLink {
-    uint32 constant callbackGasLimit = 100000;
+    uint32 constant callbackGasLimit = 1000000;
     VRFCoordinatorV2Interface immutable VRFCoordinator;
     LinkTokenInterface immutable Link;
     uint64 private immutable VRFSubscriptionId;
@@ -63,5 +63,9 @@ abstract contract RandomNumber is VRFConsumerBaseV2, SwapEthToLink {
             amount,
             abi.encode(VRFSubscriptionId)
         );
+    }
+
+    function _getVRFSubscriptionId() internal view returns (uint64) {
+        return VRFSubscriptionId;
     }
 }

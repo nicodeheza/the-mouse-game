@@ -33,7 +33,6 @@ contract SwapEthToLink {
             value: ethAmount
         }(linkToSwap, getPathForEthToLink(), address(this), deadline);
         uint256 resultAmount = result[1];
-        console.log(resultAmount);
         emit Converted(ethAmount, resultAmount);
         return resultAmount;
     }

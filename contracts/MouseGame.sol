@@ -69,7 +69,7 @@ contract MouseGame is RandomNumber, Ownable {
     }
 
     event playerInscribed(uint256 indexed time, address player);
-    event gameStarted(uint256 indexed time, address firstMouseOwner);
+    event gameStarted(address indexed firstMouseOwner, uint256 indexed time);
     event gameReverted();
     event gameEnded(address indexed player, uint256 playerPrize);
     event gameWinner(address winner);
@@ -113,14 +113,11 @@ contract MouseGame is RandomNumber, Ownable {
         uint256[] memory _randomWords
     ) internal override {
         uint256 mouseOwnerIndex = _randomWords[0] % s_players.length;
-        console.log(mouseOwnerIndex);
         address mouseOwner = s_players[mouseOwnerIndex];
-        console.log("mouseOwnerIndex:", mouseOwnerIndex);
         mouseNft.mint(mouseOwner);
-        console.log("minted");
         s_gameStartTime = block.timestamp;
 
-        emit gameStarted(block.timestamp, mouseOwner);
+        emit gameStarted(mouseOwner, block.timestamp);
     }
 
     function revertGame() internal {
@@ -343,6 +340,10 @@ contract MouseGame is RandomNumber, Ownable {
         returns (uint256 funds)
     {
         return _getVRFSubscriptionFunds();
+    }
+
+    function getVRFSubscriptionId() external view onlyOwner returns (uint64) {
+        return _getVRFSubscriptionId();
     }
 
     modifier onlyReferee() {

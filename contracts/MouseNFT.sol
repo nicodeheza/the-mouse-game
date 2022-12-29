@@ -54,9 +54,7 @@ contract MouseNFT is ERC721, GameMinion, Ownable {
         if (s_isLive) revert MouseNFT__OnlyOneMouse();
         s_isLive = true;
         s_tokenCount += 1;
-        console.log("gonna mint with args", to, s_tokenCount);
         _mint(to, s_tokenCount);
-        console.log("mintttted");
     }
 
     function burn() external onlyGame {
@@ -73,16 +71,13 @@ contract MouseNFT is ERC721, GameMinion, Ownable {
             revert MouseNFT__toAddressNotInscribed();
         }
         if (s_lastTranfer > 0) {
-            console.log("in s_lastTranfer > 0");
             uint256 tokensToSteal = (block.timestamp - s_lastTranfer) / 30;
             address owner = ownerOf(s_tokenCount);
             cheeseToken.transferFrom(owner, address(this), tokensToSteal);
         }
         if (to == address(0)) {
-            console.log("in address 0");
             s_lastTranfer = 0;
         } else {
-            console.log("in no address 0");
             s_lastTranfer = block.timestamp;
         }
     }

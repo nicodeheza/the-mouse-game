@@ -69,7 +69,11 @@ contract MouseGame is RandomNumber, Ownable {
     }
 
     event playerInscribed(uint256 indexed time, address player);
-    event gameStarted(address indexed firstMouseOwner, uint256 indexed time);
+    event gameStarted(
+        address indexed firstMouseOwner,
+        uint256 indexed tokenId,
+        uint256 indexed time
+    );
     event gameReverted();
     event gameEnded(address indexed player, uint256 playerPrize);
     event gameWinner(address winner);
@@ -114,10 +118,10 @@ contract MouseGame is RandomNumber, Ownable {
     ) internal override {
         uint256 mouseOwnerIndex = _randomWords[0] % s_players.length;
         address mouseOwner = s_players[mouseOwnerIndex];
-        mouseNft.mint(mouseOwner);
+        uint256 tokenId = mouseNft.mint(mouseOwner);
         s_gameStartTime = block.timestamp;
 
-        emit gameStarted(mouseOwner, block.timestamp);
+        emit gameStarted(mouseOwner, tokenId, block.timestamp);
     }
 
     function revertGame() internal {
@@ -139,13 +143,13 @@ contract MouseGame is RandomNumber, Ownable {
         emit gameReverted();
     }
 
-    function endGame() public onlyReferee {
+    function endGame() external onlyReferee {
         if (getGameTimeLeft() > 0) {
             revert MouseGame__gameInProgress();
         }
         Winner memory winner = Winner(0, address(0));
         for (uint i = 0; i < s_players.length; i++) {
-            address player = s_players[1];
+            address player = s_players[i];
             uint256 playerCheeseBalance = cheeseToken.balanceOf(player);
             if (winner.balance < playerCheeseBalance) {
                 winner.player = player;

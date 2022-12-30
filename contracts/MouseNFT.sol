@@ -50,11 +50,12 @@ contract MouseNFT is ERC721, GameMinion, Ownable {
             );
     }
 
-    function mint(address to) external onlyGame {
+    function mint(address to) external onlyGame returns (uint256 tokenId) {
         if (s_isLive) revert MouseNFT__OnlyOneMouse();
         s_isLive = true;
         s_tokenCount += 1;
         _mint(to, s_tokenCount);
+        return s_tokenCount;
     }
 
     function burn() external onlyGame {

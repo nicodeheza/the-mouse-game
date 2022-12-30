@@ -231,10 +231,13 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 					await vrfMock.fulfillRandomWords(requestId, mouseGame.address);
 
 					await new Promise((resolve, reject) => {
-						mouseGame.once("gameStarted", async (user) => {
+						mouseGame.once("gameStarted", async (user, tokenId) => {
 							try {
 								const ownerBalance = await mouseNft.balanceOf(user);
 								expect(ownerBalance).to.be.equal(1);
+
+								const tokenOwner = await mouseNft.ownerOf(tokenId);
+								expect(user).to.be.equal(tokenOwner);
 
 								const otherPlayers = players.filter(
 									(player, i) => player.address !== user && i < 5
@@ -402,23 +405,123 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 				});
 			});
 			describe("endGame", function () {
-				it("only the referee can call this function", async function () {});
-				it("revert if game didn't end", async function () {});
-				it("pick the correct winner", async function () {});
-				it("transfer all the player cheese token to the game", async function () {});
-				it("send the correct amount of prize tokens to the players", async function () {});
-				it("emit an event for all the player with address and their cheese token balance", async function () {});
-				it("transfer the mouse nft cheese to the game", async function () {});
-				it("send the correct amount of price token to the winner", async function () {});
-				it("the mouse nft must be burned", async function () {});
-				it("if referee delay is >= to 5 minutes pay 0", async function () {});
-				it("if referee delay is = to 2 minutes pay 3%", async function () {});
-				it("if referee delay is = to 0 minutes pay 5%", async function () {});
-				it("set game balance", async function () {});
-				it("set game start time to 0", async function () {});
-				it("set inscription start time to 0", async function () {});
-				it("remove all players", async function () {});
-				it("emit event with the game winner address", async function () {});
+				let initialOwner: SignerWithAddress, mouseId: string;
+				beforeEach(async function () {
+					const promiseArray = new Array(5)
+						.fill(true)
+						.map((_, i) =>
+							mouseGame.connect(players[i]).inscribe({value: transactionFee})
+						);
+					await Promise.all(promiseArray);
+					await network.provider.send("evm_increaseTime", [inscriptionLimit]);
+					await network.provider.send("evm_mine");
+
+					const fundTx = await mouseGame.fundVRFSubscriptionsWithEth({
+						value: ethers.utils.parseUnits((2).toString(), "ether")
+					});
+					await fundTx.wait();
+
+					const tx = await mouseGame.startGame();
+					const txReceipt = await tx.wait();
+					const starEvent = txReceipt.events?.filter(
+						(e) => e.event === "requestRandomPlayer"
+					);
+					const requestId = starEvent![0].args!.requestId;
+					await vrfMock.fulfillRandomWords(requestId, mouseGame.address);
+
+					await new Promise((resolve, reject) => {
+						mouseGame.once("gameStarted", async (user, tokenId) => {
+							initialOwner = players.find((player) => player.address === user)!;
+							mouseId = tokenId;
+							resolve(user);
+						});
+					});
+				});
+				describe("before finish", function () {
+					it("only the referee can call this function", async function () {
+						await expect(
+							mouseGame.connect(players[0]).endGame()
+						).to.have.been.rejectedWith("MouseGame__OnlyReferee()");
+					});
+					it("revert if game didn't end", async function () {
+						await expect(mouseGame.endGame()).to.have.been.rejectedWith(
+							"MouseGame__gameInProgress()"
+						);
+					});
+				});
+				describe("after finish", function () {
+					let otherPlayers: SignerWithAddress[];
+					beforeEach(async function () {
+						otherPlayers = players.filter(
+							(player, i) => player.address !== initialOwner.address && i < 5
+						);
+						await network.provider.send("evm_increaseTime", [30]);
+						await network.provider.send("evm_mine");
+						await mouseNft
+							.connect(initialOwner)
+							.transferFrom(initialOwner.address, otherPlayers[0].address, mouseId);
+						for (let i = 2; i < 5; i++) {
+							await network.provider.send("evm_increaseTime", [30 * i]);
+							await network.provider.send("evm_mine");
+							await mouseNft
+								.connect(otherPlayers[i - 2])
+								.transferFrom(
+									otherPlayers[i - 2].address,
+									otherPlayers[i - 1].address,
+									mouseId
+								);
+						}
+						await network.provider.send("evm_increaseTime", [
+							2 * 60 * 60 - (30 + 30 * 2 + 30 * 3 + 30 * 4)
+						]);
+						await network.provider.send("evm_mine");
+					});
+					it("pick the correct winner", async function () {
+						await mouseGame.endGame();
+						await new Promise((resolve, reject) => {
+							mouseGame.once("gameWinner", (winner) => {
+								try {
+									expect(winner).to.be.equal(initialOwner.address);
+									resolve(winner);
+								} catch (error) {
+									reject(error);
+								}
+							});
+						});
+					});
+					it("transfer all the players cheese token to the game", async function () {
+						await mouseGame.endGame();
+						const currentPlayers = [...otherPlayers, initialOwner];
+						await new Promise((resolve, reject) => {
+							mouseGame.once("gameEnded", async () => {
+								try {
+									const playersCheeseBalance = await Promise.all(
+										currentPlayers.map((player) => cheeseToken.balanceOf(player.address))
+									);
+									console.log(playersCheeseBalance.map((b) => b.toString()));
+									playersCheeseBalance.forEach((balance) =>
+										expect(balance).to.be.equal(0)
+									);
+									resolve(true);
+								} catch (error) {
+									reject(error);
+								}
+							});
+						});
+					});
+					it("send the correct amount of prize tokens to the players", async function () {});
+					it("emit an event for all the player with address and their cheese token balance", async function () {});
+					it("transfer the mouse nft cheese to the game", async function () {});
+					it("send the correct amount of price token to the winner", async function () {});
+					it("the mouse nft must be burned", async function () {});
+					it("if referee delay is >= to 5 minutes pay 0", async function () {});
+					it("if referee delay is = to 2 minutes pay 3%", async function () {});
+					it("if referee delay is = to 0 minutes pay 5%", async function () {});
+					it("set game balance", async function () {});
+					it("set game start time to 0", async function () {});
+					it("set inscription start time to 0", async function () {});
+					it("remove all players", async function () {});
+				});
 			});
 
 			describe("prizeToEth", function () {

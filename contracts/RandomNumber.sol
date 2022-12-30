@@ -9,6 +9,7 @@ import "./SawpEthToLink.sol";
 import "hardhat/console.sol";
 
 error RandomNumber__insufficientFunds();
+error RandomNumber__insufficientAllowance();
 
 abstract contract RandomNumber is VRFConsumerBaseV2, SwapEthToLink {
     uint32 constant callbackGasLimit = 1000000;
@@ -57,7 +58,9 @@ abstract contract RandomNumber is VRFConsumerBaseV2, SwapEthToLink {
     }
 
     function fundVRFSubscriptionsWithLink(uint256 amount) external {
-        Link.approve(address(this), amount);
+        if (Link.allowance(msg.sender, address(this)) < amount)
+            revert RandomNumber__insufficientAllowance();
+        Link.transferFrom(msg.sender, address(this), amount);
         Link.transferAndCall(
             address(VRFCoordinator),
             amount,

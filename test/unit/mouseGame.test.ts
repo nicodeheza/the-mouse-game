@@ -1,17 +1,27 @@
 import "dotenv/config";
 import {expect} from "chai";
-import {deployments, ethers, network} from "hardhat";
-import {SignerWithAddress} from "hardhat-deploy-ethers/signers";
+import {
+	ChainId,
+	Fetcher,
+	Percent,
+	Route,
+	Token,
+	TokenAmount,
+	Trade,
+	TradeType,
+	WETH
+} from "@uniswap/sdk";
+import {deployments, ethers, getNamedAccounts, network} from "hardhat";
 import {developmentChains} from "../../helper-hardhat-config";
 import {
 	CheeseToken,
 	MouseGame,
 	MouseNFT,
-	VRFCoordinatorV2Mock,
-	VRFV2WrapperMock
+	VRFCoordinatorV2Mock
 } from "../../typechain-types";
 import mineBlocks from "../../helpers/mineBlocks";
-import {Event} from "ethers";
+import {BigNumber, Contract, Event} from "ethers";
+import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 
 !developmentChains.includes(network.name)
 	? describe.skip
@@ -22,7 +32,8 @@ import {Event} from "ethers";
 				cheeseToken: CheeseToken,
 				mouseNft: MouseNFT,
 				vrfMock: VRFCoordinatorV2Mock,
-				wrapperMock: VRFV2WrapperMock;
+				uniswap: Contract,
+				linkToken: Contract;
 			const transactionFee = ethers.utils.parseUnits("10", "ether");
 			const inscriptionLimit = 10 * 60;
 
@@ -37,9 +48,23 @@ import {Event} from "ethers";
 				cheeseToken = await ethers.getContract("CheeseToken");
 				mouseNft = await ethers.getContract("MouseNFT");
 				vrfMock = await ethers.getContract("VrfMock");
+				uniswap = await ethers.getContractAt(
+					"IUniswapV2Router02",
+					"0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
+				);
+				linkToken = await ethers.getContractAt(
+					"LinkTokenInterface",
+					"0x514910771AF9Ca656af840dff83E8264EcF986CA"
+				);
 			});
 
 			this.afterAll(() => (process.env.MOUSE_TEST = ""));
+
+			const LINK = new Token(
+				ChainId.MAINNET,
+				"0x514910771AF9Ca656af840dff83E8264EcF986CA",
+				18
+			);
 
 			describe("inscribe", function () {
 				it("revert if registration time expired", async function () {
@@ -226,11 +251,156 @@ import {Event} from "ethers";
 						});
 					});
 				});
-				it("star game time must be set", async function () {});
-				it("revert if the game is in progress", async function () {});
-				it("emit gameStarted event", async function () {});
+				it("star game time must be set", async function () {
+					const initialTimeLeft = await mouseGame.getGameTimeLeft();
+					expect(initialTimeLeft).to.be.equal(9999);
+
+					const promiseArray = new Array(5)
+						.fill(true)
+						.map((_, i) =>
+							mouseGame.connect(players[i]).inscribe({value: transactionFee})
+						);
+					await Promise.all(promiseArray);
+					await network.provider.send("evm_increaseTime", [inscriptionLimit]);
+					await network.provider.send("evm_mine");
+
+					const fundTx = await mouseGame.fundVRFSubscriptionsWithEth({
+						value: ethers.utils.parseUnits((2).toString(), "ether")
+					});
+					await fundTx.wait();
+
+					const tx = await mouseGame.startGame();
+					const txReceipt = await tx.wait();
+					const starEvent = txReceipt.events?.filter(
+						(e) => e.event === "requestRandomPlayer"
+					);
+					const requestId = starEvent![0].args!.requestId;
+					await vrfMock.fulfillRandomWords(requestId, mouseGame.address);
+
+					const finalTimeLeft = await mouseGame.getGameTimeLeft();
+					expect(finalTimeLeft).to.be.lessThanOrEqual(60 * 60 * 2);
+				});
+				it("revert if the game is in progress", async function () {
+					const promiseArray = new Array(5)
+						.fill(true)
+						.map((_, i) =>
+							mouseGame.connect(players[i]).inscribe({value: transactionFee})
+						);
+					await Promise.all(promiseArray);
+					await network.provider.send("evm_increaseTime", [inscriptionLimit]);
+					await network.provider.send("evm_mine");
+
+					const fundTx = await mouseGame.fundVRFSubscriptionsWithEth({
+						value: ethers.utils.parseUnits((2).toString(), "ether")
+					});
+					await fundTx.wait();
+
+					const tx = await mouseGame.startGame();
+					const txReceipt = await tx.wait();
+					const starEvent = txReceipt.events?.filter(
+						(e) => e.event === "requestRandomPlayer"
+					);
+					const requestId = starEvent![0].args!.requestId;
+					await vrfMock.fulfillRandomWords(requestId, mouseGame.address);
+
+					await network.provider.send("evm_increaseTime", [60 * 50]);
+					await network.provider.send("evm_mine");
+
+					await expect(mouseGame.startGame()).to.have.been.rejectedWith(
+						"MouseGame__gameInProgress()"
+					);
+				});
 			});
-			//add fund tests
+			describe("fund vrf subscription", function () {
+				describe("fund with eth", function () {
+					it("eht must be swapped ot link", async function () {
+						const amountToSwap = "1000000";
+						const pair = await Fetcher.fetchPairData(LINK, WETH[LINK.chainId]);
+						const route = new Route([pair], WETH[LINK.chainId]);
+
+						await mouseGame.fundVRFSubscriptionsWithEth({value: amountToSwap});
+						await new Promise((resolve, reject) => {
+							mouseGame.once("Converted", (ethAmount, resultAmount) => {
+								try {
+									expect(ethAmount.toString()).to.be.equal(amountToSwap);
+									const eth = BigNumber.from(amountToSwap);
+									const approxLinkPrice = BigNumber.from(
+										parseInt(route.midPrice.toSignificant())
+									);
+									const approxResult = eth.mul(approxLinkPrice);
+
+									expect(resultAmount).to.be.greaterThan(0);
+									expect(resultAmount.sub(approxResult).abs()).to.be.lessThan(
+										BigNumber.from(20).mul(resultAmount).div(BigNumber.from(100))
+									);
+									resolve(resultAmount);
+								} catch (error) {
+									reject(error);
+								}
+							});
+						});
+					});
+					it("fund successfully", async function () {
+						const initialFunds = await mouseGame.getVRFSubscriptionFunds();
+						expect(initialFunds).to.be.equal(0);
+						await mouseGame.fundVRFSubscriptionsWithEth({value: "1000000"});
+						await new Promise((resolve, reject) => {
+							mouseGame.once("Converted", async (ethAmount, resultAmount) => {
+								try {
+									const finalFund = await mouseGame.getVRFSubscriptionFunds();
+									expect(finalFund).to.be.equal(resultAmount);
+									resolve(true);
+								} catch (error) {
+									reject(error);
+								}
+							});
+						});
+					});
+				});
+				describe("fund with Link", function () {
+					let linkBalance: BigNumber;
+					beforeEach(async function () {
+						const pair = await Fetcher.fetchPairData(LINK, WETH[LINK.chainId]);
+						const route = new Route([pair], WETH[LINK.chainId]);
+						const amountIn = "1000000000000000000";
+						const trade = new Trade(
+							route,
+							new TokenAmount(WETH[LINK.chainId], amountIn),
+							TradeType.EXACT_INPUT
+						);
+						const slippageTolerance = new Percent("50", "10000");
+						const amountOutMin = parseInt(
+							trade.minimumAmountOut(slippageTolerance).toSignificant()
+						);
+						const path = [WETH[LINK.chainId].address, LINK.address];
+						const to = deployer.address;
+						const deadline = Math.floor(Date.now() / 1000) + 60 * 20;
+
+						const swapTx = await uniswap.swapExactETHForTokens(
+							amountOutMin,
+							path,
+							to,
+							deadline,
+							{value: amountIn}
+						);
+						await swapTx.wait();
+
+						linkBalance = await linkToken.balanceOf(deployer.address);
+					});
+					it("if link is not approve revert", async function () {
+						await expect(
+							mouseGame.fundVRFSubscriptionsWithLink(linkBalance)
+						).to.have.been.rejectedWith("RandomNumber__insufficientAllowance()");
+					});
+					it("fund successfully", async function () {
+						await linkToken.approve(mouseGame.address, linkBalance);
+						const tx = await mouseGame.fundVRFSubscriptionsWithLink(linkBalance);
+						await tx.wait();
+						const vrfFunds = await mouseGame.getVRFSubscriptionFunds();
+						expect(vrfFunds).to.be.equal(linkBalance);
+					});
+				});
+			});
 			describe("endGame", function () {
 				it("only the referee can call this function", async function () {});
 				it("revert if game didn't end", async function () {});

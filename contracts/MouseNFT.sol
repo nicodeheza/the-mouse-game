@@ -74,7 +74,14 @@ contract MouseNFT is ERC721, GameMinion, Ownable {
         if (s_lastTranfer > 0) {
             uint256 tokensToSteal = (block.timestamp - s_lastTranfer) / 30;
             address owner = ownerOf(s_tokenCount);
-            cheeseToken.transferFrom(owner, address(this), tokensToSteal);
+            uint256 cheesBalance = cheeseToken.balanceOf(owner);
+            if (tokensToSteal <= cheesBalance) {
+                cheeseToken.transferFrom(
+                    owner,
+                    to == address(0) ? address(game) : address(this),
+                    tokensToSteal
+                );
+            }
         }
         if (to == address(0)) {
             s_lastTranfer = 0;

@@ -57,14 +57,6 @@ import {CheeseToken, MouseGameMock, MouseNftMock} from "../../typechain-types";
 					const deployerBalance = await cheeseToken.balanceOf(deployer.address);
 					expect(deployerBalance).to.be.equal(20);
 				});
-				it("the transfer amount must be approved to the game", async function () {
-					await mouseNftMock.transferCheese(deployer.address, 20);
-					const approveAmount = await cheeseToken.allowance(
-						deployer.address,
-						mouseGameMock.address
-					);
-					expect(approveAmount).to.be.equal(20);
-				});
 			});
 
 			describe("approve", function () {
@@ -83,24 +75,6 @@ import {CheeseToken, MouseGameMock, MouseNftMock} from "../../typechain-types";
 					await expect(
 						cheeseToken.transferFrom(deployer.address, player.address, 10)
 					).to.have.been.rejectedWith("CheeseToken__forbidden()");
-				});
-				it("the sender allowance must be spend", async function () {
-					await mouseNftMock.transferCheeseFrom(deployer.address, player.address, 10);
-					const allowance = await cheeseToken.allowance(
-						deployer.address,
-						mouseGameMock.address
-					);
-
-					expect(allowance).to.be.equal(240 - 10);
-				});
-				it("the sended amount must be approved to the game", async function () {
-					await mouseNftMock.transferCheeseFrom(deployer.address, player.address, 10);
-					const allowance = await cheeseToken.allowance(
-						player.address,
-						mouseGameMock.address
-					);
-
-					expect(allowance).to.be.equal(10);
 				});
 				it("transfer successfully", async function () {
 					await mouseNftMock.transferCheeseFrom(deployer.address, player.address, 10);

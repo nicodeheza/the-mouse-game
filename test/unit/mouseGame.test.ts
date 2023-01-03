@@ -498,7 +498,6 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 									const playersCheeseBalance = await Promise.all(
 										currentPlayers.map((player) => cheeseToken.balanceOf(player.address))
 									);
-									console.log(playersCheeseBalance.map((b) => b.toString()));
 									playersCheeseBalance.forEach((balance) =>
 										expect(balance).to.be.equal(0)
 									);
@@ -509,18 +508,18 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 							});
 						});
 					});
-					it("send the correct amount of prize tokens to the players", async function () {});
-					it("emit an event for all the player with address and their cheese token balance", async function () {});
-					it("transfer the mouse nft cheese to the game", async function () {});
-					it("send the correct amount of price token to the winner", async function () {});
-					it("the mouse nft must be burned", async function () {});
-					it("if referee delay is >= to 5 minutes pay 0", async function () {});
-					it("if referee delay is = to 2 minutes pay 3%", async function () {});
-					it("if referee delay is = to 0 minutes pay 5%", async function () {});
-					it("set game balance", async function () {});
-					it("set game start time to 0", async function () {});
-					it("set inscription start time to 0", async function () {});
-					it("remove all players", async function () {});
+					// it("send the correct amount of prize tokens to the players", async function () {});
+					// it("emit an event for all the player with address and their cheese token balance", async function () {});
+					// it("transfer the mouse nft cheese to the game", async function () {});
+					// it("send the correct amount of price token to the winner", async function () {});
+					// it("the mouse nft must be burned", async function () {});
+					// it("if referee delay is >= to 5 minutes pay 0", async function () {});
+					// it("if referee delay is = to 2 minutes pay 3%", async function () {});
+					// it("if referee delay is = to 0 minutes pay 5%", async function () {});
+					// it("set game balance", async function () {});
+					// it("set game start time to 0", async function () {});
+					// it("set inscription start time to 0", async function () {});
+					// it("remove all players", async function () {});
 				});
 			});
 

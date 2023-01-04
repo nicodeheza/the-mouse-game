@@ -75,7 +75,7 @@ contract MouseGame is RandomNumber, Ownable {
         uint256 indexed time
     );
     event gameReverted();
-    event gameEnded(address indexed player, uint256 playerPrize);
+    event gameEnded(address indexed winner, uint256 playerPrize);
     event gameWinner(address winner);
     event prizeSwaped(address indexed player, uint256 prize, uint256 eth);
     event refereeWithdrawEvent(uint256 amount);
@@ -175,8 +175,6 @@ contract MouseGame is RandomNumber, Ownable {
                 playerCheeseBalance
             );
             mintPrize(player, playerCheeseBalance);
-
-            emit gameEnded(player, playerCheeseBalance);
         }
 
         mintPrize(winner.player, mouseCheeseBalance + lastOwnerCheeseBalance);
@@ -214,7 +212,10 @@ contract MouseGame is RandomNumber, Ownable {
         s_inscriptionStartTime = 0;
         delete s_players;
 
-        emit gameWinner(winner.player);
+        emit gameEnded(
+            winner.player,
+            mouseCheeseBalance + lastOwnerCheeseBalance
+        );
     }
 
     function prizeToEth(uint256 amount) public payable {

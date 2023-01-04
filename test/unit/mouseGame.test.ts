@@ -482,7 +482,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 					it("pick the correct winner", async function () {
 						await mouseGame.endGame();
 						await new Promise((resolve, reject) => {
-							mouseGame.once("gameWinner", (winner) => {
+							mouseGame.once("gameEnded", (winner) => {
 								try {
 									expect(winner).to.be.equal(initialOwner.address);
 									resolve(winner);
@@ -538,10 +538,35 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 							}
 						});
 					});
-					// it("emit an event for all the player with address and their cheese token balance", async function () {});
-					// it("transfer the mouse nft cheese to the game", async function () {});
-					// it("send the correct amount of price token to the winner", async function () {});
-					// it("the mouse nft must be burned", async function () {});
+					it("transfer the mouse nft cheese to the game", async function () {
+						const mouseInitialCheese = await cheeseToken.balanceOf(mouseNft.address);
+						const players = [initialOwner, ...otherPlayers];
+						const playersCheese = (
+							await Promise.all(
+								players.map((player) => cheeseToken.balanceOf(player.address))
+							)
+						).reduce((acc, val) => val.add(acc), BigNumber.from(0));
+						const gameInitialCheese = await cheeseToken.balanceOf(mouseGame.address);
+						const tx = await mouseGame.endGame();
+						await tx.wait();
+						const mouseFinalCheese = await cheeseToken.balanceOf(mouseNft.address);
+						const gameFinalCheese = await cheeseToken.balanceOf(mouseGame.address);
+						expect(mouseFinalCheese).to.be.equal(0);
+						expect(gameFinalCheese).to.be.equal(
+							gameInitialCheese.add(mouseInitialCheese).add(playersCheese)
+						);
+					});
+					it("the mouse nft must be burned", async function () {
+						const mouseId = (await mouseNft.getTokenCount()).toString();
+						expect(await mouseNft.getIsLive()).to.be.true;
+						expect(await mouseNft.ownerOf(mouseId)).to.be;
+						const tx = await mouseGame.endGame();
+						await tx.wait();
+						expect(await mouseNft.getIsLive()).to.be.false;
+						await expect(mouseNft.ownerOf(mouseId)).to.be.rejectedWith(
+							"ERC721: invalid token ID"
+						);
+					});
 					// it("if referee delay is >= to 5 minutes pay 0", async function () {});
 					// it("if referee delay is = to 2 minutes pay 3%", async function () {});
 					// it("if referee delay is = to 0 minutes pay 5%", async function () {});
@@ -549,6 +574,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 					// it("set game start time to 0", async function () {});
 					// it("set inscription start time to 0", async function () {});
 					// it("remove all players", async function () {});
+					// it("emit an event with the winner and the winner prize", async function () {});
 				});
 			});
 

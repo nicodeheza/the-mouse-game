@@ -94,6 +94,10 @@ contract MouseNFT is ERC721, GameMinion, Ownable {
         cheeseToken = CheeseToken(cheeseTokenAddress);
     }
 
+    function getOwner() external view returns (address) {
+        return ownerOf(s_tokenCount);
+    }
+
     function getTokenCount() public view returns (uint256) {
         return s_tokenCount;
     }

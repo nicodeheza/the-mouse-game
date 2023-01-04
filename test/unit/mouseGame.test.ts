@@ -17,6 +17,7 @@ import {
 	CheeseToken,
 	MouseGame,
 	MouseNFT,
+	PrizeToken,
 	VRFCoordinatorV2Mock
 } from "../../typechain-types";
 import mineBlocks from "../../helpers/mineBlocks";
@@ -33,7 +34,8 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 				mouseNft: MouseNFT,
 				vrfMock: VRFCoordinatorV2Mock,
 				uniswap: Contract,
-				linkToken: Contract;
+				linkToken: Contract,
+				prizeToken: PrizeToken;
 			const transactionFee = ethers.utils.parseUnits("10", "ether");
 			const inscriptionLimit = 10 * 60;
 
@@ -48,6 +50,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 				cheeseToken = await ethers.getContract("CheeseToken");
 				mouseNft = await ethers.getContract("MouseNFT");
 				vrfMock = await ethers.getContract("VrfMock");
+				prizeToken = await ethers.getContract("PrizeToken");
 				uniswap = await ethers.getContractAt(
 					"IUniswapV2Router02",
 					"0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
@@ -508,7 +511,33 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 							});
 						});
 					});
-					// it("send the correct amount of prize tokens to the players", async function () {});
+					it("send the correct amount of prize tokens to the players", async function () {
+						const winnerCheese = await cheeseToken.balanceOf(initialOwner.address);
+						const otherPlayersCheese = await Promise.all(
+							otherPlayers.map((player) => cheeseToken.balanceOf(player.address))
+						);
+						const mouseCheese = await cheeseToken.balanceOf(mouseNft.address);
+						const tx = await mouseGame.endGame();
+						await tx.wait();
+
+						const winnerPrize = await prizeToken.balanceOf(initialOwner.address);
+						const otherPlayersPrize = await Promise.all(
+							otherPlayers.map((player) => prizeToken.balanceOf(player.address))
+						);
+						expect(winnerPrize).to.be.equal(
+							winnerCheese
+								.add(mouseCheese)
+								.add(otherPlayersCheese[otherPlayers.length - 1])
+						);
+
+						otherPlayersPrize.forEach((prize, i) => {
+							if (i === otherPlayers.length - 1) {
+								expect(prize).to.be.equal(10);
+							} else {
+								expect(prize).to.be.equal(otherPlayersCheese[i]);
+							}
+						});
+					});
 					// it("emit an event for all the player with address and their cheese token balance", async function () {});
 					// it("transfer the mouse nft cheese to the game", async function () {});
 					// it("send the correct amount of price token to the winner", async function () {});

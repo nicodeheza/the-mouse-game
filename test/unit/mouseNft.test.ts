@@ -126,7 +126,6 @@ import {MouseNFT, MouseGameMock, CheeseToken} from "../../typechain-types";
 				it("last owner cheese token must be transfer to the game", async function () {
 					const tx1 = await mouseGameMock.transferCheese(deployer.address);
 					await tx1.wait();
-					console.log((await cheeseToken.balanceOf(deployer.address)).toString());
 					const initialGameCheese = await cheeseToken.balanceOf(mouseGameMock.address);
 					await network.provider.send("evm_increaseTime", [60]);
 					await network.provider.send("evm_mine");
@@ -170,6 +169,14 @@ import {MouseNFT, MouseGameMock, CheeseToken} from "../../typechain-types";
 					const txTimeStamp = block.timestamp;
 					const finalLastTransfer = await mouseNft.getLastTransfer();
 					expect(finalLastTransfer).to.be.equal(txTimeStamp);
+				});
+			});
+
+			describe("getOwner", function () {
+				it("must return the mouse actual owner", async function () {
+					await mouseGameMock.mintMouse(deployer.address);
+					const owner = await mouseNft.getOwner();
+					expect(owner).to.be.equal(deployer.address);
 				});
 			});
 	  });

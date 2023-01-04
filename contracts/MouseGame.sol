@@ -148,6 +148,9 @@ contract MouseGame is RandomNumber, Ownable {
             revert MouseGame__gameInProgress();
         }
 
+        uint256 lastOwnerCheeseBalance = cheeseToken.balanceOf(
+            mouseNft.getOwner()
+        );
         uint256 mouseCheeseBalance = cheeseToken.balanceOf(address(mouseNft));
         cheeseToken.transferFrom(
             address(mouseNft),
@@ -176,7 +179,7 @@ contract MouseGame is RandomNumber, Ownable {
             emit gameEnded(player, playerCheeseBalance);
         }
 
-        mintPrize(winner.player, mouseCheeseBalance);
+        mintPrize(winner.player, mouseCheeseBalance + lastOwnerCheeseBalance);
 
         uint256 startDelay = getDelay(
             s_gameStartTime,

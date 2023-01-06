@@ -199,8 +199,8 @@ contract MouseGame is RandomNumber, Ownable {
         }
 
         uint256 roundTotalBalance = s_players.length * ENTRANCE_FEE;
-        uint256 refereeBalance = (refereePercentage * roundTotalBalance) / 100;
-        uint256 ownerBanalnce = (OWNER_PERCENTAGE * roundTotalBalance) / 100;
+        uint256 refereeBalance = (refereePercentage * 100) / roundTotalBalance;
+        uint256 ownerBanalnce = (OWNER_PERCENTAGE * 100) / roundTotalBalance;
         uint256 gameBalance = roundTotalBalance -
             (refereeBalance + ownerBanalnce);
 

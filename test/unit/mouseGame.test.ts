@@ -567,7 +567,15 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 							"ERC721: invalid token ID"
 						);
 					});
-					// it("if referee delay is >= to 5 minutes pay 0", async function () {});
+					it("if referee delay is >= to 5 minutes pay 0", async function () {
+						const refereeInitialBalance = await mouseGame.getRefereeBalance();
+						await network.provider.send("evm_increaseTime", [60 * 5]);
+						await network.provider.send("evm_mine");
+						const tx = await mouseGame.endGame();
+						await tx.wait();
+						const refereeFinalBalance = await mouseGame.getRefereeBalance();
+						expect(refereeFinalBalance).to.be.equal(refereeInitialBalance);
+					});
 					// it("if referee delay is = to 2 minutes pay 3%", async function () {});
 					// it("if referee delay is = to 0 minutes pay 5%", async function () {});
 					// it("set game balance", async function () {});

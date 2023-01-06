@@ -410,19 +410,22 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 			describe("endGame", function () {
 				let initialOwner: SignerWithAddress, mouseId: string;
 				beforeEach(async function () {
+					const fundTx = await mouseGame.fundVRFSubscriptionsWithEth({
+						value: ethers.utils.parseUnits((2).toString(), "ether")
+					});
+					await fundTx.wait();
+
 					const promiseArray = new Array(5)
 						.fill(true)
 						.map((_, i) =>
 							mouseGame.connect(players[i]).inscribe({value: transactionFee})
 						);
 					await Promise.all(promiseArray);
-					await network.provider.send("evm_increaseTime", [inscriptionLimit]);
+					const inscriptionTimeLeft = await mouseGame.getInscriptionTimeLeft();
+					await network.provider.send("evm_increaseTime", [
+						inscriptionTimeLeft.toNumber()
+					]);
 					await network.provider.send("evm_mine");
-
-					const fundTx = await mouseGame.fundVRFSubscriptionsWithEth({
-						value: ethers.utils.parseUnits((2).toString(), "ether")
-					});
-					await fundTx.wait();
 
 					const tx = await mouseGame.startGame();
 					const txReceipt = await tx.wait();
@@ -475,7 +478,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 								);
 						}
 						await network.provider.send("evm_increaseTime", [
-							2 * 60 * 60 - (30 + 30 * 2 + 30 * 3 + 30 * 4)
+							(await mouseGame.getGameTimeLeft()).toNumber()
 						]);
 						await network.provider.send("evm_mine");
 					});
@@ -532,7 +535,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 
 						otherPlayersPrize.forEach((prize, i) => {
 							if (i === otherPlayers.length - 1) {
-								expect(prize).to.be.equal(10);
+								expect(prize).to.be.equal(11);
 							} else {
 								expect(prize).to.be.equal(otherPlayersCheese[i]);
 							}
@@ -567,17 +570,51 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 							"ERC721: invalid token ID"
 						);
 					});
-					it("if referee delay is >= to 5 minutes pay 0", async function () {
+					it("if referee delay is >= to 5 minutes pay 0 and owner balance", async function () {
+						const entranceFee = await mouseGame.getEntranceFee();
+						const totalGameBalance = entranceFee.mul(otherPlayers.length + 1);
 						const refereeInitialBalance = await mouseGame.getRefereeBalance();
 						await network.provider.send("evm_increaseTime", [60 * 5]);
 						await network.provider.send("evm_mine");
 						const tx = await mouseGame.endGame();
 						await tx.wait();
 						const refereeFinalBalance = await mouseGame.getRefereeBalance();
-						expect(refereeFinalBalance).to.be.equal(refereeInitialBalance);
+						// owner and referee are the same account in this case
+						const ownerBalance = totalGameBalance.mul(5).div(100);
+						expect(refereeFinalBalance).to.be.equal(
+							refereeInitialBalance.add(ownerBalance)
+						);
 					});
-					// it("if referee delay is = to 2 minutes pay 3%", async function () {});
-					// it("if referee delay is = to 0 minutes pay 5%", async function () {});
+					it("if referee delay is = to 2 minutes pay 3% and owner balance", async function () {
+						const refereeInitialBalance = await mouseGame.getRefereeBalance();
+						const entranceFee = await mouseGame.getEntranceFee();
+						const totalGameBalance = entranceFee.mul(otherPlayers.length + 1);
+						const expectRefereeBalance = totalGameBalance.mul(3).div(100);
+						await network.provider.send("evm_increaseTime", [60 * 2]);
+						await network.provider.send("evm_mine");
+						const tx = await mouseGame.endGame();
+						await tx.wait();
+						const refereeFinalBalance = await mouseGame.getRefereeBalance();
+						// owner and referee are the same account in this case
+						const ownerBalance = totalGameBalance.mul(5).div(100);
+						expect(refereeFinalBalance).to.be.equal(
+							refereeInitialBalance.add(expectRefereeBalance).add(ownerBalance)
+						);
+					});
+					it("if referee delay is = to 0 minutes pay 5% and owner balance", async function () {
+						const refereeInitialBalance = await mouseGame.getRefereeBalance();
+						const entranceFee = await mouseGame.getEntranceFee();
+						const totalGameBalance = entranceFee.mul(otherPlayers.length + 1);
+						const expectRefereeBalance = totalGameBalance.mul(5).div(100);
+						const tx = await mouseGame.endGame();
+						await tx.wait();
+						const refereeFinalBalance = await mouseGame.getRefereeBalance();
+						// owner and referee are the same account in this case
+						const ownerBalance = totalGameBalance.mul(5).div(100);
+						expect(refereeFinalBalance).to.be.equal(
+							refereeInitialBalance.add(expectRefereeBalance).add(ownerBalance)
+						);
+					});
 					// it("set game balance", async function () {});
 					// it("set game start time to 0", async function () {});
 					// it("set inscription start time to 0", async function () {});

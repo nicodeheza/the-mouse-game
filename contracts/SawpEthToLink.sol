@@ -13,7 +13,6 @@ error SwapEthToLink__insufficientFunds(
 contract SwapEthToLink {
     IUniswapV2Router02 uniswapRouter;
     address private immutable i_LinkAddress;
-    mapping(address => uint) internal s_balance;
 
     constructor(address uniswapRouterAddress, address linkAddress) {
         uniswapRouter = IUniswapV2Router02(uniswapRouterAddress);

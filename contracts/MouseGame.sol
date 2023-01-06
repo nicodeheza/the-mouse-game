@@ -37,6 +37,7 @@ contract MouseGame is RandomNumber, Ownable {
 
     address public immutable i_referee;
 
+    mapping(address => uint256) internal s_balance;
     address[] internal s_players;
     uint256 private s_inscriptionStartTime;
     uint256 private s_gameStartTime;
@@ -195,12 +196,12 @@ contract MouseGame is RandomNumber, Ownable {
         if (totalMinutesDelay >= REFEREE_INITIAL_PERCENTAGE) {
             refereePercentage = 0;
         } else {
-            refereePercentage = refereePercentage - totalMinutesDelay;
+            refereePercentage = REFEREE_INITIAL_PERCENTAGE - totalMinutesDelay;
         }
 
         uint256 roundTotalBalance = s_players.length * ENTRANCE_FEE;
-        uint256 refereeBalance = (refereePercentage * 100) / roundTotalBalance;
-        uint256 ownerBanalnce = (OWNER_PERCENTAGE * 100) / roundTotalBalance;
+        uint256 refereeBalance = (refereePercentage * roundTotalBalance) / 100;
+        uint256 ownerBanalnce = (OWNER_PERCENTAGE * roundTotalBalance) / 100;
         uint256 gameBalance = roundTotalBalance -
             (refereeBalance + ownerBanalnce);
 
@@ -324,7 +325,7 @@ contract MouseGame is RandomNumber, Ownable {
         prizeToken = PrizeToken(prizeTokenAddress);
     }
 
-    function getEntraceFee() external view returns (uint256 entranceFee) {
+    function getEntranceFee() external view returns (uint256 entranceFee) {
         return ENTRANCE_FEE;
     }
 

@@ -615,11 +615,48 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 							refereeInitialBalance.add(expectRefereeBalance).add(ownerBalance)
 						);
 					});
-					// it("set game balance", async function () {});
-					// it("set game start time to 0", async function () {});
-					// it("set inscription start time to 0", async function () {});
-					// it("remove all players", async function () {});
-					// it("emit an event with the winner and the winner prize", async function () {});
+					it("set game balance", async function () {
+						const gameInitialBalance = await mouseGame.getGameBalance();
+						const entranceFee = await mouseGame.getEntranceFee();
+						const totalRoundBalance = entranceFee.mul(otherPlayers.length + 1);
+						const tx = await mouseGame.endGame();
+						await tx.wait();
+						// owner and referee are the same account in this case
+						const refereeBalance = await mouseGame.getRefereeBalance();
+						const gameFinalBalance = await mouseGame.getGameBalance();
+						expect(gameFinalBalance.sub(gameInitialBalance)).to.be.equal(
+							totalRoundBalance.sub(refereeBalance)
+						);
+					});
+					it("set game start time to 0", async function () {
+						const gameInitialTimeLeft = await mouseGame.getGameTimeLeft();
+						expect(gameInitialTimeLeft).to.be.lessThan(9999);
+						const tx = await mouseGame.endGame();
+						await tx.wait();
+						const gameFinalTimeLeft = await mouseGame.getGameTimeLeft();
+						expect(gameFinalTimeLeft).to.be.equal(9999);
+					});
+					it("set inscription start time to 0", async function () {
+						const initialInscriptionTimeLeft = await mouseGame.getInscriptionTimeLeft();
+						expect(initialInscriptionTimeLeft).to.be.equal(0);
+						const tx = await mouseGame.endGame();
+						await tx.wait();
+						const finalInscriptionTimeLeft = await mouseGame.getInscriptionTimeLeft();
+						expect(finalInscriptionTimeLeft).to.be.equal(9999);
+					});
+					it("remove all players", async function () {
+						const actualPlayers = [initialOwner, ...otherPlayers];
+						const playersInitialStatus = await Promise.all(
+							actualPlayers.map((player) => mouseGame.isRegistered(player.address))
+						);
+						playersInitialStatus.forEach((status) => expect(status).to.be.true);
+						const tx = await mouseGame.endGame();
+						await tx.wait();
+						const playersFinalStatus = await Promise.all(
+							actualPlayers.map((player) => mouseGame.isRegistered(player.address))
+						);
+						playersFinalStatus.forEach((status) => expect(status).to.be.false);
+					});
 				});
 			});
 

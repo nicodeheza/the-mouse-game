@@ -661,8 +661,83 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 			});
 
 			describe("prizeToEth", function () {
-				it("revert if user don't have prize tokens", async function () {});
-				it("burn the user prize tokens amount", async function () {});
+				let initialOwner: SignerWithAddress,
+					mouseId: string,
+					otherPlayers: SignerWithAddress[];
+				beforeEach(async function () {
+					const fundTx = await mouseGame.fundVRFSubscriptionsWithEth({
+						value: ethers.utils.parseUnits((2).toString(), "ether")
+					});
+					await fundTx.wait();
+
+					const promiseArray = new Array(4)
+						.fill(true)
+						.map((_, i) =>
+							mouseGame.connect(players[i]).inscribe({value: transactionFee})
+						);
+					await Promise.all(promiseArray);
+					const inscriptionTimeLeft = await mouseGame.getInscriptionTimeLeft();
+					await network.provider.send("evm_increaseTime", [
+						inscriptionTimeLeft.toNumber()
+					]);
+					await network.provider.send("evm_mine");
+
+					const tx = await mouseGame.startGame();
+					const txReceipt = await tx.wait();
+					const starEvent = txReceipt.events?.filter(
+						(e) => e.event === "requestRandomPlayer"
+					);
+					const requestId = starEvent![0].args!.requestId;
+					await vrfMock.fulfillRandomWords(requestId, mouseGame.address);
+
+					await new Promise((resolve, reject) => {
+						mouseGame.once("gameStarted", async (user, tokenId) => {
+							initialOwner = players.find((player) => player.address === user)!;
+							mouseId = tokenId;
+							resolve(user);
+						});
+					});
+
+					otherPlayers = players.filter(
+						(player, i) => player.address !== initialOwner.address && i < 5
+					);
+					await network.provider.send("evm_increaseTime", [30]);
+					await network.provider.send("evm_mine");
+					await mouseNft
+						.connect(initialOwner)
+						.transferFrom(initialOwner.address, otherPlayers[0].address, mouseId);
+					for (let i = 2; i < 4; i++) {
+						await network.provider.send("evm_increaseTime", [30 * i]);
+						await network.provider.send("evm_mine");
+						await mouseNft
+							.connect(otherPlayers[i - 2])
+							.transferFrom(
+								otherPlayers[i - 2].address,
+								otherPlayers[i - 1].address,
+								mouseId
+							);
+					}
+					await network.provider.send("evm_increaseTime", [
+						(await mouseGame.getGameTimeLeft()).toNumber()
+					]);
+					await network.provider.send("evm_mine");
+					const endTx = await mouseGame.endGame();
+					await endTx.wait();
+				});
+				it("revert if user don't have prize tokens", async function () {
+					const player = otherPlayers[otherPlayers.length - 1];
+					const playerBalance = await prizeToken.balanceOf(player.address);
+					await expect(
+						mouseGame.connect(player).prizeToEth(playerBalance.add(1))
+					).to.be.rejectedWith("MouseGame__underfunded()");
+				});
+				it("burn the user prize tokens amount", async function () {
+					const initialPrizeSupply = await prizeToken.totalSupply();
+					const playerBalance = await prizeToken.balanceOf(initialOwner.address);
+					await mouseGame.connect(initialOwner).prizeToEth(playerBalance);
+					const finalPrizeSupply = await prizeToken.totalSupply();
+					expect(finalPrizeSupply).to.be.equal(initialPrizeSupply.sub(playerBalance));
+				});
 				it("update game balance", async function () {});
 				it("send to the user the correct amount of eth", async function () {});
 				it("emit event", async function () {});

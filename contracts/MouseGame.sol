@@ -222,9 +222,9 @@ contract MouseGame is RandomNumber, Ownable {
     function prizeToEth(uint256 amount) public payable {
         uint256 userBalance = prizeToken.balanceOf(msg.sender);
         if (amount > userBalance) revert MouseGame__underfunded();
-        burnPrize(msg.sender, amount);
         uint256 prizeTokenValue = getPrizeTokenValue();
         uint256 ethToSend = amount * prizeTokenValue;
+        burnPrize(msg.sender, amount);
         s_balance[address(this)] = s_balance[address(this)] - ethToSend;
 
         (bool sent, ) = msg.sender.call{value: ethToSend}("");

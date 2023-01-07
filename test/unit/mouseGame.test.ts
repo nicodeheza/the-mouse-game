@@ -738,16 +738,41 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 					const finalPrizeSupply = await prizeToken.totalSupply();
 					expect(finalPrizeSupply).to.be.equal(initialPrizeSupply.sub(playerBalance));
 				});
-				it("update game balance", async function () {});
-				it("send to the user the correct amount of eth", async function () {});
-				it("emit event", async function () {});
+				it("update game balance", async function () {
+					const gameInitialBalance = await mouseGame.getGameBalance();
+					const prizeValue = await mouseGame.getPrizeTokenValue();
+					const playerBalance = await prizeToken.balanceOf(initialOwner.address);
+					await mouseGame.connect(initialOwner).prizeToEth(playerBalance);
+					const gameFinalBalance = await mouseGame.getGameBalance();
+					expect(gameFinalBalance).to.be.equal(
+						gameInitialBalance.sub(playerBalance.mul(prizeValue))
+					);
+				});
+				it("send to the user the correct amount of eth", async function () {
+					const playerInitialBalance = await initialOwner.getBalance();
+					const prizeValue = await mouseGame.getPrizeTokenValue();
+					const playerPrizeBalance = await prizeToken.balanceOf(initialOwner.address);
+					const tx = await mouseGame.connect(initialOwner).prizeToEth(playerPrizeBalance);
+					const receipt = await tx.wait();
+					const gasUsed = receipt.cumulativeGasUsed.mul(receipt.effectiveGasPrice);
+					const playerFinalBalance = await initialOwner.getBalance();
+					expect(playerFinalBalance).to.be.equal(
+						playerInitialBalance.add(prizeValue.mul(playerPrizeBalance)).sub(gasUsed)
+					);
+				});
+				it("emit event", async function () {
+					const playerPrizeBalance = await prizeToken.balanceOf(initialOwner.address);
+					await expect(
+						mouseGame.connect(initialOwner).prizeToEth(playerPrizeBalance)
+					).to.emit(mouseGame, "prizeSwapped");
+				});
 			});
 
 			describe("refereeWithdraw", function () {
 				it("revert if isn't call by the referee", async function () {});
 				it("send the correct amount of eth", async function () {});
 				it("set the referee balance to 0", async function () {});
-				it("emit and event", async function () {});
+				it("emit an event", async function () {});
 			});
 
 			describe("isRegistered", function () {

@@ -78,7 +78,7 @@ contract MouseGame is RandomNumber, Ownable {
     event gameReverted();
     event gameEnded(address indexed winner, uint256 playerPrize);
     event gameWinner(address winner);
-    event prizeSwaped(address indexed player, uint256 prize, uint256 eth);
+    event prizeSwapped(address indexed player, uint256 prize, uint256 eth);
     event refereeWithdrawEvent(uint256 amount);
     event ownerWithdrawEvent(uint256 amount);
     event requestRandomPlayer(uint256 requestId);
@@ -231,7 +231,7 @@ contract MouseGame is RandomNumber, Ownable {
 
         if (!sent) revert MouseGame__trasactionFail();
 
-        emit prizeSwaped(msg.sender, amount, ethToSend);
+        emit prizeSwapped(msg.sender, amount, ethToSend);
     }
 
     function refereeWithdraw() public payable onlyReferee {

@@ -1,4 +1,5 @@
 import {HardhatUserConfig} from "hardhat/config";
+import "solidity-coverage";
 import "hardhat-deploy";
 import "hardhat-deploy-ethers";
 import "dotenv/config";

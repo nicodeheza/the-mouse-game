@@ -4,7 +4,8 @@
   "author": "nicodeheza",
   "license": "MIT",
   "scripts": {
-    "test": "NODE_ENV=test yarn hardhat test --network hardhat"
+    "test": "NODE_ENV=test yarn hardhat test --network hardhat",
+    "coverage": "NODE_ENV=test yarn hardhat coverage --network hardhat"
   },
   "dependencies": {
     "@chainlink/contracts": "^0.5.1",
@@ -31,7 +32,7 @@
     "hardhat-deploy": "^0.11.20",
     "hardhat-deploy-ethers": "^0.3.0-beta.13",
     "hardhat-gas-reporter": "^1.0.8",
-    "solidity-coverage": "^0.8.0",
+    "solidity-coverage": "^0.8.2",
     "ts-node": ">=8.0.0",
     "typechain": "^8.1.0",
     "typescript": ">=4.5.0"

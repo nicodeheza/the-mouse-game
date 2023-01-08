@@ -659,8 +659,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 					});
 				});
 			});
-
-			describe("prizeToEth", function () {
+			describe("after game end", function () {
 				let initialOwner: SignerWithAddress,
 					mouseId: string,
 					otherPlayers: SignerWithAddress[];
@@ -724,84 +723,196 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 					const endTx = await mouseGame.endGame();
 					await endTx.wait();
 				});
-				it("revert if user don't have prize tokens", async function () {
-					const player = otherPlayers[otherPlayers.length - 1];
-					const playerBalance = await prizeToken.balanceOf(player.address);
-					await expect(
-						mouseGame.connect(player).prizeToEth(playerBalance.add(1))
-					).to.be.rejectedWith("MouseGame__underfunded()");
-				});
-				it("burn the user prize tokens amount", async function () {
-					const initialPrizeSupply = await prizeToken.totalSupply();
-					const playerBalance = await prizeToken.balanceOf(initialOwner.address);
-					await mouseGame.connect(initialOwner).prizeToEth(playerBalance);
-					const finalPrizeSupply = await prizeToken.totalSupply();
-					expect(finalPrizeSupply).to.be.equal(initialPrizeSupply.sub(playerBalance));
-				});
-				it("update game balance", async function () {
-					const gameInitialBalance = await mouseGame.getGameBalance();
-					const prizeValue = await mouseGame.getPrizeTokenValue();
-					const playerBalance = await prizeToken.balanceOf(initialOwner.address);
-					await mouseGame.connect(initialOwner).prizeToEth(playerBalance);
-					const gameFinalBalance = await mouseGame.getGameBalance();
-					expect(gameFinalBalance).to.be.equal(
-						gameInitialBalance.sub(playerBalance.mul(prizeValue))
-					);
-				});
-				it("send to the user the correct amount of eth", async function () {
-					const playerInitialBalance = await initialOwner.getBalance();
-					const prizeValue = await mouseGame.getPrizeTokenValue();
-					const playerPrizeBalance = await prizeToken.balanceOf(initialOwner.address);
-					const tx = await mouseGame.connect(initialOwner).prizeToEth(playerPrizeBalance);
-					const receipt = await tx.wait();
-					const gasUsed = receipt.cumulativeGasUsed.mul(receipt.effectiveGasPrice);
-					const playerFinalBalance = await initialOwner.getBalance();
-					expect(playerFinalBalance).to.be.equal(
-						playerInitialBalance.add(prizeValue.mul(playerPrizeBalance)).sub(gasUsed)
-					);
-				});
-				it("emit event", async function () {
-					const playerPrizeBalance = await prizeToken.balanceOf(initialOwner.address);
-					await expect(
-						mouseGame.connect(initialOwner).prizeToEth(playerPrizeBalance)
-					).to.emit(mouseGame, "prizeSwapped");
-				});
-			});
 
-			describe("refereeWithdraw", function () {
-				it("revert if isn't call by the referee", async function () {});
-				it("send the correct amount of eth", async function () {});
-				it("set the referee balance to 0", async function () {});
-				it("emit an event", async function () {});
+				describe("prizeToEth", function () {
+					it("revert if user don't have prize tokens", async function () {
+						const player = otherPlayers[otherPlayers.length - 1];
+						const playerBalance = await prizeToken.balanceOf(player.address);
+						await expect(
+							mouseGame.connect(player).prizeToEth(playerBalance.add(1))
+						).to.be.rejectedWith("MouseGame__underfunded()");
+					});
+					it("burn the user prize tokens amount", async function () {
+						const initialPrizeSupply = await prizeToken.totalSupply();
+						const playerBalance = await prizeToken.balanceOf(initialOwner.address);
+						await mouseGame.connect(initialOwner).prizeToEth(playerBalance);
+						const finalPrizeSupply = await prizeToken.totalSupply();
+						expect(finalPrizeSupply).to.be.equal(initialPrizeSupply.sub(playerBalance));
+					});
+					it("update game balance", async function () {
+						const gameInitialBalance = await mouseGame.getGameBalance();
+						const prizeValue = await mouseGame.getPrizeTokenValue();
+						const playerBalance = await prizeToken.balanceOf(initialOwner.address);
+						await mouseGame.connect(initialOwner).prizeToEth(playerBalance);
+						const gameFinalBalance = await mouseGame.getGameBalance();
+						expect(gameFinalBalance).to.be.equal(
+							gameInitialBalance.sub(playerBalance.mul(prizeValue))
+						);
+					});
+					it("send to the user the correct amount of eth", async function () {
+						const playerInitialBalance = await initialOwner.getBalance();
+						const prizeValue = await mouseGame.getPrizeTokenValue();
+						const playerPrizeBalance = await prizeToken.balanceOf(initialOwner.address);
+						const tx = await mouseGame
+							.connect(initialOwner)
+							.prizeToEth(playerPrizeBalance);
+						const receipt = await tx.wait();
+						const gasUsed = receipt.cumulativeGasUsed.mul(receipt.effectiveGasPrice);
+						const playerFinalBalance = await initialOwner.getBalance();
+						expect(playerFinalBalance).to.be.equal(
+							playerInitialBalance.add(prizeValue.mul(playerPrizeBalance)).sub(gasUsed)
+						);
+					});
+					it("emit event", async function () {
+						const playerPrizeBalance = await prizeToken.balanceOf(initialOwner.address);
+						await expect(
+							mouseGame.connect(initialOwner).prizeToEth(playerPrizeBalance)
+						).to.emit(mouseGame, "prizeSwapped");
+					});
+				});
+				describe("refereeWithdraw", function () {
+					it("revert if isn't call by the referee", async function () {
+						await expect(
+							mouseGame.connect(players[0]).refereeWithdraw()
+						).to.be.rejectedWith("MouseGame__OnlyReferee()");
+					});
+					it("send the correct amount of eth", async function () {
+						const refereeGameBalance = await mouseGame.getRefereeBalance();
+						const refereeInitialBalance = await deployer.getBalance();
+						const tx = await mouseGame.refereeWithdraw();
+						const receipt = await tx.wait();
+						const gasUsed = receipt.cumulativeGasUsed.mul(receipt.effectiveGasPrice);
+						const refereeFinalBalance = await deployer.getBalance();
+						expect(refereeFinalBalance).to.be.equal(
+							refereeInitialBalance.add(refereeGameBalance).sub(gasUsed)
+						);
+					});
+					it("set the referee balance to 0", async function () {
+						const refereeInitialGameBalance = await mouseGame.getRefereeBalance();
+						expect(refereeInitialGameBalance).to.be.greaterThan(0);
+						await mouseGame.refereeWithdraw();
+						const refereeFinalGameBalance = await mouseGame.getRefereeBalance();
+						expect(refereeFinalGameBalance).to.be.equal(0);
+					});
+					it("emit an event", async function () {
+						await expect(mouseGame.refereeWithdraw()).to.emit(
+							mouseGame,
+							"refereeWithdrawEvent"
+						);
+					});
+				});
+				describe("getPrizeTokenValue", function () {
+					it("return the correct value", async function () {
+						const gameBalance = await mouseGame.getGameBalance();
+						const prizeSupply = await prizeToken.totalSupply();
+						const tokenValue = await mouseGame.getPrizeTokenValue();
+						expect(tokenValue).to.be.equal(gameBalance.div(prizeSupply));
+					});
+				});
 			});
 
 			describe("isRegistered", function () {
-				it("return true if player is registered", async function () {});
-				it("return false if player is not registered", async function () {});
-			});
-
-			describe("getPrizeTokenValue", function () {
-				it("return the correct value", async function () {});
+				it("return true if player is registered", async function () {
+					const fee = await mouseGame.getEntranceFee();
+					await mouseGame.connect(players[0]).inscribe({value: fee});
+					expect(await mouseGame.isRegistered(players[0].address)).to.be.true;
+				});
+				it("return false if player is not registered", async function () {
+					expect(await mouseGame.isRegistered(players[0].address)).to.be.false;
+				});
 			});
 
 			describe("getInscriptionTimeLeft", function () {
-				it("if time is 0 return 9999", async function () {});
-				it("if time is grader or equal to inscription limit return 0", async function () {});
-				it("return the correct time left", async function () {});
+				it("if time is 0 return 9999", async function () {
+					expect(await mouseGame.getInscriptionTimeLeft()).to.be.equal(9999);
+				});
+				it("if time is grader or equal to inscription limit return 0", async function () {
+					const fee = await mouseGame.getEntranceFee();
+					const inscriptionTimeLimit = await mouseGame.getInscriptionLimit();
+					await mouseGame.connect(players[0]).inscribe({value: fee});
+					await network.provider.send("evm_increaseTime", [
+						inscriptionTimeLimit.toNumber() + 2
+					]);
+					await network.provider.send("evm_mine");
+					expect(await mouseGame.getInscriptionTimeLeft()).to.be.equal(0);
+				});
+				it("return the correct time left", async function () {
+					const fee = await mouseGame.getEntranceFee();
+					const inscriptionTimeLimit = await mouseGame.getInscriptionLimit();
+					await mouseGame.connect(players[0]).inscribe({value: fee});
+					await network.provider.send("evm_increaseTime", [
+						inscriptionTimeLimit.toNumber() - 20
+					]);
+					await network.provider.send("evm_mine");
+					expect(await mouseGame.getInscriptionTimeLeft()).to.be.equal(20);
+				});
 			});
 
 			describe("getGameTimeLeft", function () {
-				it("if time is 0 return 9999", async function () {});
-				it("if time is grader or equal to inscription limit return 0", async function () {});
-				it("return the correct time left", async function () {});
-			});
+				it("if time is 0 return 9999", async function () {
+					expect(await mouseGame.getGameTimeLeft()).to.be.equal(9999);
+				});
+				it("if time is grader or equal to inscription limit return 0", async function () {
+					const fundTx = await mouseGame.fundVRFSubscriptionsWithEth({
+						value: ethers.utils.parseUnits((2).toString(), "ether")
+					});
+					await fundTx.wait();
+					const promiseArray = new Array(5)
+						.fill(true)
+						.map((_, i) =>
+							mouseGame.connect(players[i]).inscribe({value: transactionFee})
+						);
+					await Promise.all(promiseArray);
+					const inscriptionTimeLeft = await mouseGame.getInscriptionTimeLeft();
+					await network.provider.send("evm_increaseTime", [
+						inscriptionTimeLeft.toNumber()
+					]);
+					await network.provider.send("evm_mine");
 
-			describe("getGameBalance", function () {
-				it("the game balance", async function () {});
-			});
+					const tx = await mouseGame.startGame();
+					const txReceipt = await tx.wait();
+					const starEvent = txReceipt.events?.filter(
+						(e) => e.event === "requestRandomPlayer"
+					);
+					const requestId = starEvent![0].args!.requestId;
+					await vrfMock.fulfillRandomWords(requestId, mouseGame.address);
 
-			describe("getGameBalance", function () {
-				it("revert if isn't call by the referee", async function () {});
-				it("the referee balance", async function () {});
+					const gameDuration = 60 * 60 * 2;
+
+					await network.provider.send("evm_increaseTime", [gameDuration + 20]);
+					await network.provider.send("evm_mine");
+					expect(await mouseGame.getGameTimeLeft()).to.be.equal(0);
+				});
+				it("return the correct time left", async function () {
+					const fundTx = await mouseGame.fundVRFSubscriptionsWithEth({
+						value: ethers.utils.parseUnits((2).toString(), "ether")
+					});
+					await fundTx.wait();
+					const promiseArray = new Array(5)
+						.fill(true)
+						.map((_, i) =>
+							mouseGame.connect(players[i]).inscribe({value: transactionFee})
+						);
+					await Promise.all(promiseArray);
+					const inscriptionTimeLeft = await mouseGame.getInscriptionTimeLeft();
+					await network.provider.send("evm_increaseTime", [
+						inscriptionTimeLeft.toNumber()
+					]);
+					await network.provider.send("evm_mine");
+
+					const tx = await mouseGame.startGame();
+					const txReceipt = await tx.wait();
+					const starEvent = txReceipt.events?.filter(
+						(e) => e.event === "requestRandomPlayer"
+					);
+					const requestId = starEvent![0].args!.requestId;
+					await vrfMock.fulfillRandomWords(requestId, mouseGame.address);
+
+					const gameDuration = 60 * 60 * 2;
+
+					await network.provider.send("evm_increaseTime", [gameDuration - 20]);
+					await network.provider.send("evm_mine");
+					expect(await mouseGame.getGameTimeLeft()).to.be.equal(20);
+				});
 			});
 	  });

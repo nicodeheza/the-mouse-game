@@ -5,7 +5,8 @@
   "license": "MIT",
   "scripts": {
     "test": "NODE_ENV=test yarn hardhat test --network hardhat",
-    "coverage": "NODE_ENV=test yarn hardhat coverage --network hardhat"
+    "coverage": "NODE_ENV=test yarn hardhat coverage --network hardhat",
+    "slither": "slither ."
   },
   "dependencies": {
     "@chainlink/contracts": "^0.5.1",

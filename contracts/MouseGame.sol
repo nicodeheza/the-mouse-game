@@ -134,9 +134,9 @@ contract MouseGame is RandomNumber, Ownable {
                     address(this),
                     CHEESE_INITIAL_AMOUNT
                 );
+                s_players[i] = address(0);
                 (bool sent, ) = payable(player).call{value: ENTRANCE_FEE}("");
                 if (!sent) revert MouseGame__tryAgainLater();
-                s_players[i] = address(0);
             }
         }
 

@@ -97,7 +97,8 @@ contract MouseGame is RandomNumber, Ownable {
         }
 
         s_players.push(msg.sender);
-        cheeseToken.transfer(msg.sender, CHEESE_INITIAL_AMOUNT);
+        bool success = cheeseToken.transfer(msg.sender, CHEESE_INITIAL_AMOUNT);
+        if (!success) revert MouseGame__trasactionFail();
 
         emit playerInscribed(block.timestamp, msg.sender);
     }
@@ -129,11 +130,12 @@ contract MouseGame is RandomNumber, Ownable {
         for (uint i = 0; i < s_players.length; i++) {
             address player = s_players[i];
             if (player != address(0)) {
-                cheeseToken.transferFrom(
+                bool success = cheeseToken.transferFrom(
                     player,
                     address(this),
                     CHEESE_INITIAL_AMOUNT
                 );
+                if (!success) revert MouseGame__trasactionFail();
                 s_players[i] = address(0);
                 (bool sent, ) = payable(player).call{value: ENTRANCE_FEE}("");
                 if (!sent) revert MouseGame__tryAgainLater();
@@ -153,11 +155,13 @@ contract MouseGame is RandomNumber, Ownable {
             mouseNft.getOwner()
         );
         uint256 mouseCheeseBalance = cheeseToken.balanceOf(address(mouseNft));
-        cheeseToken.transferFrom(
+        //slither-disable-next-line arbitrary-send-erc20
+        bool mouseCheeseSuccess = cheeseToken.transferFrom(
             address(mouseNft),
             address(this),
             mouseCheeseBalance
         );
+        if (!mouseCheeseSuccess) revert MouseGame__trasactionFail();
 
         mouseNft.burn();
 
@@ -169,12 +173,13 @@ contract MouseGame is RandomNumber, Ownable {
                 winner.player = player;
                 winner.balance = playerCheeseBalance;
             }
-
-            cheeseToken.transferFrom(
+            //slither-disable-next-line arbitrary-send-erc20
+            bool success = cheeseToken.transferFrom(
                 player,
                 address(this),
                 playerCheeseBalance
             );
+            if (!success) revert MouseGame__trasactionFail();
             mintPrize(player, playerCheeseBalance);
         }
 

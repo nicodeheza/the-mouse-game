@@ -13,6 +13,7 @@ import "hardhat/console.sol";
 
 error MouseNFT__OnlyOneMouse();
 error MouseNFT__toAddressNotInscribed();
+error MouseNFT__transactionFailed();
 
 contract MouseNFT is ERC721, GameMinion, Ownable {
     uint256 private s_tokenCount = 0;
@@ -76,11 +77,13 @@ contract MouseNFT is ERC721, GameMinion, Ownable {
             address owner = ownerOf(s_tokenCount);
             uint256 cheesBalance = cheeseToken.balanceOf(owner);
             if (tokensToSteal <= cheesBalance) {
-                cheeseToken.transferFrom(
+                //slither-disable-next-line arbitrary-send-erc20
+                bool success = cheeseToken.transferFrom(
                     owner,
                     to == address(0) ? address(game) : address(this),
                     tokensToSteal
                 );
+                if (!success) revert MouseNFT__transactionFailed();
             }
         }
         if (to == address(0)) {

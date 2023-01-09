@@ -28,6 +28,7 @@ contract SwapEthToLink {
         uint256 ethPerLink = getEthForLinkEstimation(1);
         uint256 linkToSwap = ethAmount / ethPerLink;
 
+        //slither-disable-next-line arbitrary-send-eth
         uint256[] memory result = uniswapRouter.swapExactETHForTokens{
             value: ethAmount
         }(linkToSwap, getPathForEthToLink(), address(this), deadline);

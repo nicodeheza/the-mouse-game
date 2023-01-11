@@ -6,8 +6,6 @@ import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/LinkTokenInterface.sol";
 import "./SawpEthToLink.sol";
 
-import "hardhat/console.sol";
-
 error RandomNumber__insufficientFunds();
 error RandomNumber__insufficientAllowance();
 error RandomNumber__transactionFailed();

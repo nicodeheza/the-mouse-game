@@ -9,8 +9,6 @@ import "./GameMinion.sol";
 import "./CheeseToken.sol";
 import "./MouseGame.sol";
 
-import "hardhat/console.sol";
-
 error MouseNFT__OnlyOneMouse();
 error MouseNFT__toAddressNotInscribed();
 error MouseNFT__transactionFailed();

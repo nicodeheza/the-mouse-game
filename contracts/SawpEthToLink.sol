@@ -3,8 +3,6 @@ pragma solidity ^0.8.9;
 
 import "./interfaces/uniswapRouter/IUniswapV2Router02.sol";
 
-import "hardhat/console.sol";
-
 error SwapEthToLink__insufficientFunds(
     uint256 balance,
     uint256 necessaryAmount

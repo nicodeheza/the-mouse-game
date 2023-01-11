@@ -7,8 +7,6 @@ import "./RandomNumber.sol";
 import "./MouseNFT.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "hardhat/console.sol";
-
 error MouseGame__inscriptionClose();
 error MouseGame__underpayment();
 error MouseGame__alreadyRegistered();
@@ -200,8 +198,6 @@ contract MouseGame is RandomNumber, Ownable {
             gameStartTime,
             GAME_DURATION
         );
-
-        console.log(startDelay, endDelay);
 
         uint256 totalMinutesDelay = (startDelay + endDelay) / 60;
         uint256 refereePercentage;

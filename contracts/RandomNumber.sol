@@ -51,11 +51,12 @@ abstract contract RandomNumber is VRFConsumerBaseV2, SwapEthToLink {
 
     function fundVRFSubscriptionsWithEth() external payable {
         uint256 amount = convertEthToLink(msg.value);
-        Link.transferAndCall(
+        bool success = Link.transferAndCall(
             address(VRFCoordinator),
             amount,
             abi.encode(VRFSubscriptionId)
         );
+        if (!success) revert RandomNumber__transactionFailed();
     }
 
     function fundVRFSubscriptionsWithLink(uint256 amount) external {

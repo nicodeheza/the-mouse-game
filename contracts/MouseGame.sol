@@ -84,6 +84,7 @@ contract MouseGame is RandomNumber, Ownable {
     event requestRandomPlayer(uint256 requestId);
 
     function inscribe() public payable {
+        //slither-disable-next-line incorrect-equality
         if (getInscriptionTimeLeft() == 0 || s_players.length >= MAX_PLAYERS) {
             revert MouseGame__inscriptionClose();
         }
@@ -129,6 +130,7 @@ contract MouseGame is RandomNumber, Ownable {
     function revertGame() internal {
         for (uint i = 0; i < s_players.length; i++) {
             address player = s_players[i];
+            s_players[i] = address(0);
             if (player != address(0)) {
                 bool success = cheeseToken.transferFrom(
                     player,
@@ -136,12 +138,10 @@ contract MouseGame is RandomNumber, Ownable {
                     CHEESE_INITIAL_AMOUNT
                 );
                 if (!success) revert MouseGame__trasactionFail();
-                s_players[i] = address(0);
                 (bool sent, ) = payable(player).call{value: ENTRANCE_FEE}("");
                 if (!sent) revert MouseGame__tryAgainLater();
             }
         }
-
         s_inscriptionStartTime = 0;
         emit gameReverted();
     }
@@ -150,6 +150,9 @@ contract MouseGame is RandomNumber, Ownable {
         if (getGameTimeLeft() > 0) {
             revert MouseGame__gameInProgress();
         }
+
+        uint256 gameStartTime = s_gameStartTime;
+        s_gameStartTime = 0;
 
         uint256 lastOwnerCheeseBalance = cheeseToken.balanceOf(
             mouseNft.getOwner()
@@ -183,18 +186,22 @@ contract MouseGame is RandomNumber, Ownable {
             mintPrize(player, playerCheeseBalance);
         }
 
+        uint256 numberOfPlayers = s_players.length;
+        delete s_players;
         mintPrize(winner.player, mouseCheeseBalance + lastOwnerCheeseBalance);
 
         uint256 startDelay = getDelay(
-            s_gameStartTime,
+            gameStartTime,
             s_inscriptionStartTime,
             INSCRIPTION_LIMIT
         );
         uint256 endDelay = getDelay(
             block.timestamp,
-            s_gameStartTime,
+            gameStartTime,
             GAME_DURATION
         );
+
+        console.log(startDelay, endDelay);
 
         uint256 totalMinutesDelay = (startDelay + endDelay) / 60;
         uint256 refereePercentage;
@@ -204,7 +211,7 @@ contract MouseGame is RandomNumber, Ownable {
             refereePercentage = REFEREE_INITIAL_PERCENTAGE - totalMinutesDelay;
         }
 
-        uint256 roundTotalBalance = s_players.length * ENTRANCE_FEE;
+        uint256 roundTotalBalance = numberOfPlayers * ENTRANCE_FEE;
         uint256 refereeBalance = (refereePercentage * roundTotalBalance) / 100;
         uint256 ownerBanalnce = (OWNER_PERCENTAGE * roundTotalBalance) / 100;
         uint256 gameBalance = roundTotalBalance -
@@ -214,9 +221,7 @@ contract MouseGame is RandomNumber, Ownable {
         s_balance[owner()] += ownerBanalnce;
         s_balance[address(this)] += gameBalance;
 
-        s_gameStartTime = 0;
         s_inscriptionStartTime = 0;
-        delete s_players;
 
         emit gameEnded(
             winner.player,
@@ -229,8 +234,9 @@ contract MouseGame is RandomNumber, Ownable {
         if (amount > userBalance) revert MouseGame__underfunded();
         uint256 prizeTokenValue = getPrizeTokenValue();
         uint256 ethToSend = amount * prizeTokenValue;
-        burnPrize(msg.sender, amount);
+
         s_balance[address(this)] = s_balance[address(this)] - ethToSend;
+        burnPrize(msg.sender, amount);
 
         (bool sent, ) = msg.sender.call{value: ethToSend}("");
 
@@ -285,6 +291,7 @@ contract MouseGame is RandomNumber, Ownable {
     }
 
     function getInscriptionTimeLeft() public view returns (uint256) {
+        //slither-disable-next-line incorrect-equality
         if (s_inscriptionStartTime == 0) return 9999;
         uint256 time = block.timestamp - s_inscriptionStartTime;
         if (time >= INSCRIPTION_LIMIT) return 0;
@@ -292,6 +299,7 @@ contract MouseGame is RandomNumber, Ownable {
     }
 
     function getGameTimeLeft() public view returns (uint256) {
+        //slither-disable-next-line incorrect-equality
         if (s_gameStartTime == 0) return 9999;
         uint256 time = block.timestamp - s_gameStartTime;
         if (time >= GAME_DURATION) return 0;

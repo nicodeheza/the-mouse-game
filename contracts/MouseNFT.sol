@@ -76,20 +76,24 @@ contract MouseNFT is ERC721, GameMinion, Ownable {
             uint256 tokensToSteal = (block.timestamp - s_lastTranfer) / 30;
             address owner = ownerOf(s_tokenCount);
             uint256 cheesBalance = cheeseToken.balanceOf(owner);
+
             if (tokensToSteal <= cheesBalance) {
+                address trasferTo = to == address(0)
+                    ? address(game)
+                    : address(this);
+
+                updateLastTransfer(to);
+
                 //slither-disable-next-line arbitrary-send-erc20
                 bool success = cheeseToken.transferFrom(
                     owner,
-                    to == address(0) ? address(game) : address(this),
+                    trasferTo,
                     tokensToSteal
                 );
                 if (!success) revert MouseNFT__transactionFailed();
             }
-        }
-        if (to == address(0)) {
-            s_lastTranfer = 0;
         } else {
-            s_lastTranfer = block.timestamp;
+            updateLastTransfer(to);
         }
     }
 
@@ -111,5 +115,9 @@ contract MouseNFT is ERC721, GameMinion, Ownable {
 
     function getLastTransfer() public view returns (uint256) {
         return s_lastTranfer;
+    }
+
+    function updateLastTransfer(address to) private {
+        to == address(0) ? s_lastTranfer = 0 : s_lastTranfer = block.timestamp;
     }
 }
